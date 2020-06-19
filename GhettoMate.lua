@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek")
 script_version('17/06/2020')
-script_version_number(1)
+script_version_number(2)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -395,7 +395,7 @@ function main()
 						ini4[GhettoMateSettings].NotifyDrugs = not ini4[GhettoMateSettings].NotifyDrugs
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] == (script.update and u8:decode'{06940f}  8. [GhettoMate] Актуальная версия' or u8:decode'{d10000}  8. [GhettoMate] Версия устарела') then
+					elseif dialogLine[list + 1] == '  8. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия') then
 						interface = false
 						update()
 					else
@@ -1753,7 +1753,7 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = u8:decode'  5. Выбрать анимацию угона\t' .. ini4[GhettoMateSettings].IdAnimUgonyala
 		dialogLine[#dialogLine + 1] = u8:decode'  6. Уведомления от Find\t' .. (ini4[GhettoMateSettings].NotifyFind and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'  7. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  8. Обновить скрипт\t' --.. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  8. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия')
 		
 		local text3 = ""
 		for k,v in pairs(dialogLine) do
