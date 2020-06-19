@@ -1,37 +1,33 @@
-## Welcome to GitHub Pages
+## GhettoMate
 
-You can use the [editor on GitHub](https://github.com/Vlaek/GhettoMate/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+# [Скачать GhettoMate](https://youtube.com)
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Зависимости (установить перед запуском скрипта)
+-   [CLEO 4](https://cleo.li)
+-   [SAMPFUNCS v5.4.1](https://www.blast.hk/threads/17/)
+-   [Moonloader v026.5](https://www.blast.hk/threads/13305/)
 
-### Markdown
+## Установка
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+- Установить библиотеки из пункта Зависимости в корневую папку игры
+- Переместить папку "lib" в папку moonloader корневой папки игры
+- Переместить файл скрипта "GhettoMate.lua" в папку moonloader корневой папки игры
 
-```markdown
-Syntax highlighted code block
+## Команды
+- Меню настроек скрипта - /ghettomate
+- Меня настроек ларька - /larek
+- Худ ларьков - /lhud
+- Искать игрока по id - /gfind id
+- Искать машину по названию - /fc (название каре)
+- Также при нажатии на клавишу * на нумпаде включается функция AutoGetGuns
 
-# Header 1
-## Header 2
-### Header 3
+### Larek
 
-- Bulleted
-- List
+![ ](https://i.imgur.com/q6GQ4Xp.png) 
+![ ](https://i.imgur.com/IxTMbIx.png) ![ ](https://i.imgur.com/ZlJZrdp.png)
+![ ](https://i.imgur.com/HknO27o.png) ![ ](https://i.imgur.com/i6AZDRz.png)
 
-1. Numbered
-2. List
+## Связь
 
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Vlaek/GhettoMate/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+- [VK](https://vk.com/twonse)
+- [GitHub issue](https://github.com/21se/Taximate/issues/new)
