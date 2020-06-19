@@ -23,8 +23,8 @@
 
 ### Larek
 
-![ ](https://i.imgur.com/q6GQ4Xp.png) 
-![ ](https://i.imgur.com/IxTMbIx.png) ![ ](https://i.imgur.com/ZlJZrdp.png)
+![ ](https://i.imgur.com/CS505Fs.png) 
+![ ](https://i.imgur.com/MoP2eBE.png) ![ ](https://i.imgur.com/ZlJZrdp.png)
 ![ ](https://i.imgur.com/HknO27o.png) ![ ](https://i.imgur.com/i6AZDRz.png)
 
 ## Связь
