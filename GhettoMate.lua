@@ -2,8 +2,8 @@ script_name("GhettoMate")
 script_author("Vlaek")
 script_version('17/06/2020')
 script_version_number(1)
---script_url("https://vlaek.github.io/GhettoMate/")
---script.update = false
+script_url("https://vlaek.github.io/GhettoMate/")
+script.update = false
 
 local sampev, inicfg, imgui, encoding, bass = require 'lib.samp.events', require 'inicfg', require 'imgui', require 'encoding', require "lib.bass"
 encoding.default = 'CP1251'
@@ -286,7 +286,7 @@ function main()
 	ini3 = inicfg.load(GhettoMateTime, directIni3)
 	ini4 = inicfg.load(GhettoMateSettings, directIni4)
 	
-	--checkUpdates()
+	checkUpdates()
 	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Успешно загрузился!", main_color)
 	
 	imgui.ApplyCustomStyle()
@@ -395,9 +395,9 @@ function main()
 						ini4[GhettoMateSettings].NotifyDrugs = not ini4[GhettoMateSettings].NotifyDrugs
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] == u8:decode'  8. Обновить скрипт\t'  then
+					elseif dialogLine[list + 1] == (script.update and u8:decode'{06940f}  8. [GhettoMate] Актуальная версия' or u8:decode'{d10000}  8. [GhettoMate] Версия устарела') then
 						interface = false
-						--update()
+						update()
 					else
 						ShowDialog(20)
 					end
@@ -2276,7 +2276,7 @@ function Calibration()
 	sampSendChat("/time")
 end
 
---[[function checkUpdates()
+function checkUpdates()
   local fpath = os.tmpname()
   if doesFileExist(fpath) then os.remove(fpath) end
   downloadUrlToFile("https://raw.githubusercontent.com/Vlaek/GhettoMate/master/version.json", fpath, function(_, status, _, _)
@@ -2288,7 +2288,7 @@ end
           file:close()
           os.remove(fpath)
           if info['version_num'] > thisScript()['version_num'] then
-						sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF} Доступна новая версия скрипта!', main_color)
+						sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF}Доступна новая версия скрипта!', main_color)
 							script.update = true
             return true
           end
@@ -2301,11 +2301,11 @@ end
 function update()
   downloadUrlToFile("https://raw.githubusercontent.com/Vlaek/GhettoMate/master/GhettoMate.lua", thisScript().path, function(_, status, _, _)
     if status == 6 then
-			sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF} Скрипт обновлён', main_color)
+			sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF}Скрипт обновлён!', main_color)
       thisScript():reload()
     end
   end)
-end]]
+end
 
 -- AUTOGETGUNS--
 
