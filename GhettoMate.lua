@@ -1,11 +1,14 @@
 script_name("GhettoMate")
 script_author("Vlaek")
-script_version('17/06/2020')
-script_version_number(2)
+script_version('21/06/2020')
+script_version_number(1)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
-local sampev, inicfg, imgui, encoding, bass = require 'lib.samp.events', require 'inicfg', require 'imgui', require 'encoding', require "lib.bass"
+local sampev, inicfg, imgui, encoding, bass, keys = require 'lib.samp.events', require 'inicfg', require 'imgui', require 'encoding', require "lib.bass", require "vkeys"
+require "reload_all"
+require "lib.sampfuncs"
+require "lib.moonloader"
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
 
@@ -66,12 +69,14 @@ local CalibrationA = false
 local interface = false
 --AutoGetGuns--
 local GetGuns = false
+local NickSklad = 0
 --Sucher--
 local Find = false
 local NotFound = false
 local Found = false
 local WasFound = false
-local Id = nil
+local TargetId = nil
+local TargetLeave = false
 --UGONYALA--
 local ugontimer = 0
 local ugtimer = 0
@@ -145,8 +150,12 @@ function main()
 	if server == '' then thisScript():unload() end
 	
 	sampRegisterChatCommand("lhud", cmd_hud)
-	sampRegisterChatCommand("gsucher", cmd_sucher)
+	sampRegisterChatCommand("gfind", cmd_sucher)
+	sampRegisterChatCommand("autogetguns", cmd_autogetguns)
 	sampRegisterChatCommand('GhettoMate', function()
+		ShowDialog(20)
+	end)
+	sampRegisterChatCommand('GM', function()
 		ShowDialog(20)
 	end)
 	sampRegisterChatCommand('larek', function()
@@ -295,6 +304,7 @@ function main()
 	while true do
 		wait(250)
 		
+		paused = isGamePaused()
 		imgui.ShowCursor = false
 		
 		if main_window_state.v == false then
@@ -306,9 +316,6 @@ function main()
 			imgui.Process = main_window_state.v
 		else
 			main_window_state.v = false
-		end
-		if isKeyJustPressed(VK_MULTIPLY) then
-			cmd_autogetguns()
 		end
 		GhettoMateConfig = string.format('GhettoMateConfig')
 		ini = inicfg.load(GhettoMateConfig, directIni)
@@ -340,6 +347,10 @@ function main()
 		TimerM()
 		Refresh()
 		
+		if isKeyJustPressed(VK_MULTIPLY) then
+			cmd_autogetguns()
+		end
+		
 		local caption = sampGetDialogCaption()
 		local result, button, list, input = sampHasDialogRespond(1000)
 		if caption == u8:decode'GhettoMate: Список' then
@@ -350,13 +361,21 @@ function main()
 					cmd_autogetguns()
 					ShowDialog(20)
 				elseif dialogLine[list + 1] ==  u8:decode'  3. Find\t'  .. (Find and '{06940f}ON' or '{d10000}OFF') then
-					Find = false
-					deleteCheckpoint(checkpoint)
-					removeBlip(blip)
-					ShowDialog(21)
+					if Find == true then
+						Find = false
+						deleteCheckpoint(checkpoint)
+						removeBlip(blip)
+					else
+						deleteCheckpoint(checkpoint)
+						removeBlip(blip)
+						ShowDialog(21)
+					end
 				elseif dialogLine[list + 1] ==  u8:decode'  4. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF') then
-					sampSendChat("/fc")
-					ShowDialog(22)
+					if search == true then
+						sampSendChat("/fc")
+					else
+						ShowDialog(22)
+					end
 				elseif dialogLine[list + 1] ==  u8:decode'> Настройки\t' then
 					ShowDialog(23)
 				else
@@ -723,7 +742,7 @@ function main()
 			if result then
 				if button == 1 then
 					ini4[GhettoMateSettings].TimerNotifyLarek = input
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое время таймера составляет: " .. ini4[GhettoMateSettings].TimerNotifyLarek .. u8:decode" секунд", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое время таймера составляет: {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyLarek .. u8:decode" секунд", main_color)
 					inicfg.save(ini4, directIni4)
 					ShowDialog(23)
 				else
@@ -736,7 +755,7 @@ function main()
 			if result then
 				if button == 1 then
 					ini4[GhettoMateSettings].IdAnimUgonyala = input
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новый id анимации: " .. ini4[GhettoMateSettings].IdAnimUgonyala, main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новый id анимации: {FFFF00}" .. ini4[GhettoMateSettings].IdAnimUgonyala, main_color)
 					inicfg.save(ini4, directIni4)
 					ShowDialog(23)
 				else
@@ -780,12 +799,12 @@ function main()
                     if string.lower(carname) == string.lower(vehnames[modelid-399]) then
                       removeMarks()
                       mark = addSpriteBlipForCoord(vehh[2],vehh[3],vehh[4],55)
-                      checkpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
+                      ugcheckpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
 					  if ini4[GhettoMateSettings].NotifyUgonyala then
 						  if isDriver then
-							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {9ACD32}\"%s\" {FF8C00}в кв. [{00CED1}%s-%s{FF8C00}]{FF8C00}, за рулем: {FF6347}%s. {FF8C00}Метка на карте", vehnames[modelid-399],secta[alpha], digit+12, driverNickname), main_color)
+							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
 						  else
-							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {9ACD32}\"%s\" {FF8C00}в кв. [{00CED1}%s-%s{FF8C00}]{FF8C00}. {FF8C00}Метка на карте", vehnames[modelid-399],secta[alpha], digit+12), main_color)
+							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
 						  end
 					  end
                       if marks then
@@ -793,9 +812,9 @@ function main()
                           removeBlip(mark)
                         end
                       end
-                      if checkpoints then
-                        for i, checkpoint in ipairs(checkpoints) do
-                          deleteCheckpoint(checkpoint)
+                      if ugcheckpoints then
+                        for i, ugcheckpoint in ipairs(ugcheckpoints) do
+                          deleteCheckpoint(ugcheckpoint)
                         end
                       end
                     end
@@ -809,9 +828,9 @@ function main()
 				if ini4[GhettoMateSettings].NotifyUgonyala then
 					if notify then
 					  if isDriver then
-						sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Новый {9ACD32}\"%s\" {FFFFFF}в кв. [{00CED1}%s-%s{FFFFFF}]{FFFFFF}, за рулем: {FF6347}%s", vehnames[modelid-399],secta[alpha], digit+12, driverNickname), main_color)
+						sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Новый транспорт {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
 					  else
-						sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Новый {9ACD32}\"%s\" {FFFFFF}в кв. [{00CED1}%s-%s{FFFFFF}]{FFFFFF}", vehnames[modelid-399],secta[alpha], digit+12), main_color)
+						sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Новый транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
 					  end
 					end
 				end
@@ -830,12 +849,12 @@ function main()
                     if string.lower(carname) == string.lower(vehnames[modelid-399]) then
                       removeMarks()
                       mark = addSpriteBlipForCoord(vehh[2],vehh[3],vehh[4],55)
-                      checkpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
+                      ugcheckpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
 					  if ini4[GhettoMateSettings].NotifyUgonyala then
 						  if isDriver then
-							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {9ACD32}\"%s\" {FF8C00}в кв. [{00CED1}%s-%s{FF8C00}]{FF8C00}, за рулем: {FF6347}%s. {FF8C00}Метка на карте", vehnames[modelid-399],secta[alpha], digit+12, driverNickname), main_color)
+							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
 						  else
-							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {9ACD32}\"%s\" {FF8C00}в кв. [{00CED1}%s-%s{FF8C00}]{FF8C00}. {FF8C00}Метка на карте", vehnames[modelid-399],secta[alpha], digit+12), main_color)
+							sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
 						  end
 					  end
                       if marks then
@@ -843,9 +862,9 @@ function main()
                           removeBlip(mark)
                         end
                       end
-                      if checkpoints then
-                        for i, checkpoint in ipairs(checkpoints) do
-                          deleteCheckpoint(checkpoint)
+                      if ugcheckpoints then
+                        for i, ugcheckpoint in ipairs(ugcheckpoints) do
+                          deleteCheckpoint(ugcheckpoint)
                         end
                       end
                     end
@@ -1218,7 +1237,7 @@ end
 
 function DrugsWaiting()
 	wait(60000)
-	sampAddChatMessage(" [TaxiMate] {FFFFFF}Юзай, " .. my_name .. "!", main_color)
+	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Юзай, {FFFF00}" .. my_name .. "{FFFFFF}!", main_color)
 end
 
 function Timer()
@@ -1725,7 +1744,7 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine, dialogTextToList = {}, {}
 		dialogLine[#dialogLine + 1] = '  1. Larek\t'
 		dialogLine[#dialogLine + 1] = '  2. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = '  3. Sucher\t' .. (Find and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  3. Find\t' .. (Find and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = '  4. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'> Настройки\t'
 		
@@ -2185,13 +2204,18 @@ function sampev.onServerMessage(color, text)
 	-- AUTOGETGUNS--
 	
 	if GetGuns and not paused then
-		if string.find(text, u8:decode" открыл(а) склад с оружием", 1, true) then
+		if string.find(text, u8:decode"открыл(а) склад с оружием", 1, true) then
+			NickSklad = string.match(text, u8:decode"(%S+)")
+			sampAddChatMessage(" " .. NickSklad .. u8:decode" открыл(а) склад с оружием", 0x00FF00)
 			sampSendChat("/get guns")
+		end
+		if string.find(text, u8:decode"У вас 500/500 материалов с собой", 1, true) then
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}AutoGetGuns: {00FF00}Успешно!", main_color)
+			sampAddChatMessage(" [GhettoMate] {FFFFFF}AutoGetGuns: {FF0000}off", main_color)
 			GetGuns = false
 		end
-		if string.find(text, u8:decode" закрыл(а) склад с оружием", 1, true) then
-			GetGuns = false
-			sampAddChatMessage(" [GhettoMate] {FFFFFF}AutoGetGuns: {d10000}off", main_color)
+		if string.find(text, u8:decode"Необходимо находиться на своей базе", 1, true) then
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}AutoGetGuns: {FF0000}Неудача!", main_color)
 		end
 	end	
 	
@@ -2200,9 +2224,13 @@ function sampev.onServerMessage(color, text)
 	if string.find(text, u8:decode"SMS: Слишком долго. Нам нужны хорошие автоугонщики, а не черепахи") then
 		stopSearch()
 	end
+	
+	if string.find(text, u8:decode"SMS: Ты меня огорчил!") then
+		stopSearch()
+	end
 
 	if string.find(text, u8:decode" Отличная тачка. Будет нужна работа, приходи.") then
-		sampAddChatMessage("{FFFFFF} TH |{FF0000} Следующий угон доступен через 15 минут. Таймер активирован.")
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF} Следующий угон доступен через 15 минут. Таймер активирован.", main_color)
 		stopSearch()
 		ugontimer = os.clock() + 900
 	end
@@ -2214,7 +2242,7 @@ function sampev.onServerMessage(color, text)
 
 	if string.find(text, u8:decode"Пригони нам тачку марки .+, и мы тебе хорошо заплатим.") then
 		carname = string.match(text, u8:decode"Пригони нам тачку марки (.+), и мы тебе хорошо заплатим.")
-		sampSendChat("/fc "..carname)
+		sampSendChat("/fc " .. carname)
 	end
 
 	if string.find(text, u8:decode"SMS: Это то что нам нужно, гони её на склад.") then
@@ -2315,7 +2343,7 @@ function cmd_autogetguns()
 		sampAddChatMessage(" [GhettoMate] {FFFFFF}AutoGetGuns: {00FF00}on", main_color)
 	end
 	if GetGuns == false then
-		sampAddChatMessage(" [GhettoMate] {FFFFFF}AutoGetGuns: {d10000}off", main_color)
+		sampAddChatMessage(" [GhettoMate] {FFFFFF}AutoGetGuns: {FF0000}off", main_color)
 	end
 end
 
@@ -2326,56 +2354,77 @@ function cmd_sucher(arg)
 	Found = false
 	NotFound = false
 	WasFound = false
-	if tonumber(arg) == tonumber(my_id) then
-		if ini4[GhettoMateSettings].NotifyFind then
-			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Не имеет смысла", main_color)
+	TargetId = arg
+	TargetLeave = false
+	if sampIsPlayerConnected(TargetId) then
+		playerNickname = sampGetPlayerNickname(TargetId)
+		if tonumber(arg) == tonumber(my_id) then
+			if ini4[GhettoMateSettings].NotifyFind then
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Не имеет смысла", main_color)
+			end
+			Find = false
 		end
+		if not Find then
+			if ini4[GhettoMateSettings].NotifyFind then
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Поиск прекращен", main_color)
+			end
+			deleteCheckpoint(checkpoint)
+			removeBlip(blip)
+		end
+	else
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Игрок не на сервере", main_color)
 		Find = false
-	end
-	Id = arg
-	if not Find then
-		if ini4[GhettoMateSettings].NotifyFind then
-			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Поиск прекращен", main_color)
-		end
-		deleteCheckpoint(checkpoint)
-		removeBlip(blip)
 	end
 end
 
 function Suchen()
-	local result, ped = sampGetCharHandleBySampPlayerId(Id)
-	local playerNickname = sampGetPlayerNickname(Id)
-	if result then
-		local posX, posY, posZ = getCharCoordinates(ped)
-		deleteCheckpoint(checkpoint)
-		removeBlip(blip)
-		checkpoint = createCheckpoint(1, posX, posY, posZ, posX, posY, posZ, 1)
-		blip = addSpriteBlipForCoord(posX, posY, posZ, 3)
-		if Found == false then
-			if ini4[GhettoMateSettings].NotifyFind then
-				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} обнаружена!", main_color)
+	if sampIsPlayerConnected(TargetId) then
+		result, ped = sampGetCharHandleBySampPlayerId(TargetId)
+		if result then
+			local posX, posY, posZ = getCharCoordinates(ped)
+			health = sampGetPlayerHealth(TargetId)
+			armor = sampGetPlayerArmor(TargetId)
+			deleteCheckpoint(checkpoint)
+			removeBlip(blip)
+			checkpoint = createCheckpoint(1, posX, posY, posZ, posX, posY, posZ, 1)
+			blip = addSpriteBlipForCoord(posX, posY, posZ, 3)
+			if Found == false then
+				if ini4[GhettoMateSettings].NotifyFind then
+					AfkStatus = sampIsPlayerPaused(TargetId)
+					if AfkStatus then
+						sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Цель{FF0000} %s {FFFFFF}обнаружена! HP:%s AR:%s AFK", playerNickname, health, armor), main_color)
+					else
+						sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Цель{FF0000} %s {FFFFFF}обнаружена! HP:%s AR:%s", playerNickname, health, armor), main_color)
+					end
+				end
+				if isCharDead(ped) then
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} ликвидирована!", main_color)
+				end
+				Found = true
+				NotFound = false
+				WasFound = true
 			end
-			Found = true
-			NotFound = false
-			WasFound = true
+		else
+			deleteCheckpoint(checkpoint)
+			removeBlip(blip)
+			if NotFound == false and WasFound == false then
+				if ini4[GhettoMateSettings].NotifyFind then
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} не обнаружена!", main_color)
+				end
+				NotFound = true
+				Found = false
+			end
+			if NotFound == false and WasFound == true then
+				if ini4[GhettoMateSettings].NotifyFind then
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} пропала!", main_color)
+				end
+				NotFound = true
+				Found = false
+			end
 		end
 	else
-		deleteCheckpoint(checkpoint)
-		removeBlip(blip)
-		if NotFound == false and WasFound == false then
-			if ini4[GhettoMateSettings].NotifyFind then
-				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} не обнаружена!", main_color)
-			end
-			NotFound = true
-			Found = false
-		end
-		if NotFound == false and WasFound == true then
-			if ini4[GhettoMateSettings].NotifyFind then
-				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} пропала!", main_color)
-			end
-			NotFound = true
-			Found = false
-		end
+		Find = false
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} вышла с сервера!", main_color)
 	end
 end
 
@@ -2407,7 +2456,7 @@ function sampev.onSendCommand(cmd)
       end
       if found then
 		if ini4[GhettoMateSettings].NotifyUgonyala then
-			sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {9ACD32}\"%s\" {00FF00}активирован",carname), main_color)
+			sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {FF0000}\"%s\" {FFFFFF}активирован",carname), main_color)
 		end
         search = true
         removeMarks()
@@ -2416,12 +2465,12 @@ function sampev.onSendCommand(cmd)
             digit = math.ceil(veh[2]/250)
             alpha = math.ceil(veh[3]/250)
             table.insert(marks,addSpriteBlipForCoord(veh[2],veh[3],veh[4],55))
-            table.insert(checkpoints, createCheckpoint(1, veh[2],veh[3],veh[4],veh[2],veh[3],veh[4], 1))
+            table.insert(ugcheckpoints, createCheckpoint(1, veh[2],veh[3],veh[4],veh[2],veh[3],veh[4], 1))
 			if ini4[GhettoMateSettings].NotifyUgonyala then
 				if veh[6] then
-				  sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}\"%s\" был в кв. [{00CED1}%s-%s{FFFFFF}]{FFFFFF} %s минут назад, за рулем был: {FF6347}%s", veh[1], secta[alpha], digit+12, math.floor((os.clock()-veh[7])/60), veh[6]), main_color)
+				  sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\"{FFFFFF} был обнаружен{FFFF00} %s {FFFFFF}минут назад, за рулем был: {FFFF00}%s", veh[1], math.floor((os.clock()-veh[7])/60), veh[6]), main_color)
 				else
-				  sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}\"%s\" был в кв. [{00CED1}%s-%s{FFFFFF}] %s минут назад", veh[1], secta[alpha], digit+12, math.floor((os.clock()-veh[7])/60)), main_color)
+				  sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\"{FFFFFF} был обнаружен{FFFF00} %s {FFFFFF}минут назад", veh[1], math.floor((os.clock()-veh[7])/60)), main_color)
 				end
 			end
           end
@@ -2437,11 +2486,11 @@ function sampev.onSendCommand(cmd)
       if ugtimer>0 then
         if math.floor(ugtimer%60)>=10 then
 		  if ini4[GhettoMateSettings].NotifyUgonyala then
-			sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Угон доступен через: {FFFFFF}%s:%s",math.floor(ugtimer/60),math.floor(ugtimer%60)), main_color)
+			sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Угон доступен через: {FFFF00}%s:%s",math.floor(ugtimer/60),math.floor(ugtimer%60)), main_color)
 		  end
         else
 		  if ini4[GhettoMateSettings].NotifyUgonyala then
-            sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Угон доступен через: {FFFFFF}%s:0%s",math.floor(ugtimer/60),math.floor(ugtimer%60)), main_color)
+            sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Угон доступен через: {FFFF00}%s:0%s",math.floor(ugtimer/60),math.floor(ugtimer%60)), main_color)
 		  end
         end
       else
@@ -2467,7 +2516,7 @@ function stopSearch()
 	removeMarks()
 	if search then
 		if ini4[GhettoMateSettings].NotifyUgonyala then
-			sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {9ACD32}\"%s\" {FF0000}прекращен", carname), main_color)
+			sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {FF0000}\"%s\"{FFFFFF} прекращен", carname), main_color)
 		end
 		search = false
 	end
@@ -2483,14 +2532,4 @@ function removeMarks()
 	end
 	removeBlip(mark)
 	deleteCheckpoint(ugcheckpoint)
-end
-
-function mySort(a,b)
-	if math.floor((os.clock()-a[7])/60) > math.floor((os.clock()-b[7])/60) then
-		v = b
-		b = a
-		a = v
-		return true
-	end
-	return false
 end
