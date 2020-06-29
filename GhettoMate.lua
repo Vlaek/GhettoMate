@@ -281,7 +281,8 @@ function main()
 				AnimUgonyala=true,
 				IdAnimUgonyala=tonumber(14),
 				NotifyFind=true,
-				NotifyDrugs=true
+				NotifyDrugs=true,
+				NotifyAutoGetGuns=true
 			}
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
@@ -411,6 +412,10 @@ function main()
 						ShowDialog(23)
 					elseif dialogLine[list + 1] ==  u8:decode'  7. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF') then
 						ini4[GhettoMateSettings].NotifyDrugs = not ini4[GhettoMateSettings].NotifyDrugs
+						inicfg.save(ini4, directIni4)
+						ShowDialog(23)
+					elseif dialogLine[list + 1] ==  u8:decode'  7. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF') then
+						ini4[GhettoMateSettings].NotifyAutoGetGuns = not ini4[GhettoMateSettings].NotifyAutoGetGuns
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
 					elseif dialogLine[list + 1] == '  8. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия') then
@@ -1785,6 +1790,7 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = u8:decode'  5. Выбрать анимацию угона\t' .. ini4[GhettoMateSettings].IdAnimUgonyala
 		dialogLine[#dialogLine + 1] = u8:decode'  6. Уведомления от Find\t' .. (ini4[GhettoMateSettings].NotifyFind and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'  7. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode'  7. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = '  8. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия')
 		
 		local text3 = ""
@@ -2222,13 +2228,15 @@ function sampev.onServerMessage(color, text)
 			sampAddChatMessage(" " .. NickSklad .. u8:decode" открыл(а) склад с оружием", 0x00FF00)
 			sampSendChat("/get guns")
 		end
-		if string.find(text, u8:decode"У вас 500/500 материалов с собой", 1, true) then
-			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}AutoGetGuns: {00FF00}Успешно!", main_color)
-			sampAddChatMessage(" [GhettoMate] {FFFFFF}AutoGetGuns: {FF0000}off", main_color)
-			GetGuns = false
+		if string.find(text, u8:decode"У вас 500/500 материалов с собой", 1, true) or string.find(text, u8:decode"У вас 600/600 материалов с собой", 1, true) or string.find(text, u8:decode"У вас 700/700 материалов с собой", 1, true) then
+			if ini4[GhettoMateSettings].NotifyAutoGetGuns then
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}AutoGetGuns: {00FF00}Успешно!", main_color)
+			end
 		end
 		if string.find(text, u8:decode"Необходимо находиться на своей базе", 1, true) then
-			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}AutoGetGuns: {FF0000}Неудача!", main_color)
+			if ini4[GhettoMateSettings].NotifyAutoGetGuns then 
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}AutoGetGuns: {FF0000}Неудача!", main_color)
+			end
 		end
 	end	
 	
