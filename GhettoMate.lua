@@ -414,8 +414,13 @@ function main()
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
 					elseif dialogLine[list + 1] == '  8. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия') then
-						interface = false
-						update()
+						if script.update then
+							interface = false
+							update()
+						else
+							sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Последняя версия уже установлена", main_color)
+							ShowDialog(23)
+						end
 					else
 						ShowDialog(20)
 					end
