@@ -43,7 +43,6 @@ local Magaz13 = false
 local Magaz14 = false
 local Magaz15 = false
 local Magaz16 = false
-
 local timerMagaz = {u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно", }
 
 local oneHour = 3600
@@ -58,8 +57,7 @@ local InterfacePosition = true
 local timerM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 local hourM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 local minuteM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-local secondM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-local totalSecondsM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+local secondsM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 local color = {"{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}", "{808080}"}
 local MagazTime = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false}
 
@@ -78,14 +76,27 @@ local WasFound = false
 local TargetId = nil
 local TargetDead = false
 local TargetLeave = false
+--MO--
+local MOtimer = false
+local MOsideTimer = false
+local MOLS = false
+local MOSF = false
+local MOLV = false
+local timerMagazO = {u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно"}
+local timerMO = {0, 0, 0}
+local hourMO = {0, 0, 0}
+local minuteMO = {0, 0, 0}
+local secondsMO = {0, 0, 0}
+local colorMO = {"{808080}", "{808080}", "{808080}"}
+local MOTime = {false, false, false}
 --UGONYALA--
 local ugontimer = 0
 local ugtimer = 0
 local mark, ugcheckpoint = nil, nil
 local marks, ugcheckpoints = {}, {}
 local vehlist = {}
-local notify = false
 local spam = true
+local notify = false
 local search = false
 
 local vehnames = {
@@ -126,9 +137,6 @@ local vehclasses= {
   ["Hotring Racer"] = "A", ["Hotring Racer A"] = "A", ["Hotring Racer B"] = "A"
 }
 
-secta = {[12]="А",[11]="Б",[10]="В",[9]="Г",[8]="Д",[7]="Ж",[6]="З",[5]="И",[4]="К",[3]="Л",[2]="М",[1]="Н",
-[0]="О",[-1]="П",[-2]="Р",[-3]="С",[-4]="Т",[-5]="У",[-6]="Ф",[-7]="Х",[-8]="Ц",[-9]="Ч",[-10]="Ш",[-11]="Я"}
-
 function main()
 	if not isSampLoaded() or not isSampfuncsLoaded() then return end
 	while not isSampAvailable() do wait(100) end
@@ -146,8 +154,8 @@ function main()
 	server = sampGetCurrentServerName():gsub('|', '')
 	server = (server:find('02') and 'Two' or (server:find('Revolution') and 'Revolution' or (server:find('Legacy') and 'Legacy' or (server:find('Classic') and 'Classic' or ''))))
 	if server == '' then thisScript():unload() end
-	sampRegisterChatCommand("autogetguns", cmd_autogetguns)
 	sampRegisterChatCommand("lhud", cmd_hud)
+	sampRegisterChatCommand("mohud", cmd_MOhud)
 	sampRegisterChatCommand("gfind", cmd_sucher)
 	sampRegisterChatCommand('GhettoMate', function()
 		ShowDialog(20)
@@ -160,7 +168,9 @@ function main()
 	end)
 	
 	Wait = lua_thread.create_suspended(Waiting)
+	MOWait = lua_thread.create_suspended(MOWaiting)
 	Wait2 = lua_thread.create_suspended(Waiting2)
+	MOWait2 = lua_thread.create_suspended(MOWaiting2)
 	DrugsWait = lua_thread.create_suspended(DrugsWaiting)
 	
 	AdressConfig = string.format("%s\\moonloader\\config", getGameDirectory())
@@ -271,6 +281,30 @@ function main()
 		inicfg.save(ini3, directIni3)
 	end
 	
+	TimeMO = string.format('TimeMO-Server-%s', server)
+	if ini3[TimeMO] == nil then
+		ini3 = inicfg.load({
+			[TimeMO] = {
+				time1  = u8:decode"Неизвестно",
+				time2  = u8:decode"Неизвестно",
+				time3  = u8:decode"Неизвестно"
+			}
+		}, directIni3)
+		inicfg.save(ini3, directIni3)
+	end
+	
+	SecondsMO = string.format('SecondsMO-Server-%s', server)
+	if ini3[SecondsMO] == nil then
+		ini3 = inicfg.load({
+			[SecondsMO] = {
+				time1  = tonumber(0),
+				time2  = tonumber(0),
+				time3  = tonumber(0)
+			}
+		}, directIni3)
+		inicfg.save(ini3, directIni3)
+	end
+	
 	GhettoMateSettings = string.format('GhettoMateSettings-%s', my_name)
 	if ini4[GhettoMateSettings] == nil then
 		ini4 = inicfg.load({
@@ -282,7 +316,9 @@ function main()
 				IdAnimUgonyala=tonumber(14),
 				NotifyFind=true,
 				NotifyDrugs=true,
-				NotifyAutoGetGuns=true
+				NotifyAutoGetGuns=true,
+				TimerNotifyMO=tonumber(15),
+				NotifyMO=true
 			}
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
@@ -344,8 +380,11 @@ function main()
 		totalSeconds = hour * 3600 + minute * 60 + second
 		
 		Timer()
+		TimerMO()
 		TimerM()
+		TimerMMO()
 		Refresh()
+		RefreshMO()
 		
 		if isKeyJustPressed(VK_MULTIPLY) then
 			cmd_autogetguns()
@@ -392,7 +431,7 @@ function main()
 						ini4[GhettoMateSettings].NotifyLarek = not ini4[GhettoMateSettings].NotifyLarek
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  2. Таймер уведомлений Larek\t' .. ini4[GhettoMateSettings].TimerNotifyLarek then
+					elseif dialogLine[list + 1] ==  u8:decode'  2. Таймер уведомлений от Larek\t' .. ini4[GhettoMateSettings].TimerNotifyLarek then
 						ShowDialog(24)
 						inicfg.save(ini4, directIni4)
 					elseif dialogLine[list + 1] ==  u8:decode'  3. Уведомления от Ugonyala\t' .. (ini4[GhettoMateSettings].NotifyUgonyala and '{06940f}ON' or '{d10000}OFF') then
@@ -414,11 +453,17 @@ function main()
 						ini4[GhettoMateSettings].NotifyDrugs = not ini4[GhettoMateSettings].NotifyDrugs
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  7. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF') then
+					elseif dialogLine[list + 1] ==  u8:decode'  8. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF') then
 						ini4[GhettoMateSettings].NotifyAutoGetGuns = not ini4[GhettoMateSettings].NotifyAutoGetGuns
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] == '  8. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия') then
+					elseif dialogLine[list + 1] ==  u8:decode'  9. Уведомления от MO\t' .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF') then
+						ini4[GhettoMateSettings].NotifyMO = not ini4[GhettoMateSettings].NotifyMO
+						inicfg.save(ini4, directIni4)
+					elseif dialogLine[list + 1] ==  u8:decode' 10. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO then
+						ShowDialog(26)
+						inicfg.save(ini4, directIni4)
+					elseif dialogLine[list + 1] == ' 11. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия') then
 						if script.update then
 							interface = false
 							update()
@@ -750,10 +795,15 @@ function main()
 		if caption == u8:decode"Таймер" then
 			if result then
 				if button == 1 then
-					ini4[GhettoMateSettings].TimerNotifyLarek = input
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое время таймера составляет: {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyLarek .. u8:decode"{FFFFFF} секунд", main_color)
-					inicfg.save(ini4, directIni4)
-					ShowDialog(23)
+					if tonumber(input) >= tonumber(1800) or tonumber(input) <= tonumber(0) then
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Диапозон от {FFFF00}1 {FFFFFF}до {FFFF00}1799", main_color)
+						ShowDialog(23)
+					else
+						ini4[GhettoMateSettings].TimerNotifyLarek = input
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое время таймера составляет: {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyLarek .. u8:decode"{FFFFFF} секунд", main_color)
+						inicfg.save(ini4, directIni4)
+						ShowDialog(23)
+					end
 				else
 					ShowDialog(23)
 				end
@@ -763,10 +813,33 @@ function main()
 		if caption == u8:decode"Анимация" then
 			if result then
 				if button == 1 then
-					ini4[GhettoMateSettings].IdAnimUgonyala = input
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новый id анимации: {FFFF00}" .. ini4[GhettoMateSettings].IdAnimUgonyala, main_color)
-					inicfg.save(ini4, directIni4)
+					if tonumber(input) > tonumber(45) or tonumber(input) < tonumber(0) then
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Диапозон от {FFFF00}0 {FFFFFF}до {FFFF00}45", main_color)
+						ShowDialog(23)
+					else
+						ini4[GhettoMateSettings].IdAnimUgonyala = input
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новый id анимации: {FFFF00}" .. ini4[GhettoMateSettings].IdAnimUgonyala, main_color)
+						inicfg.save(ini4, directIni4)
+						ShowDialog(23)
+					end
+				else
 					ShowDialog(23)
+				end
+			end
+		end
+		local result, button, list, input = sampHasDialogRespond(1006)
+		if caption == u8:decode"Таймер" then
+			if result then
+				if button == 1 then
+					if tonumber(input) >= tonumber(1800) or tonumber(input) <= tonumber(0) then
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Диапозон от {FFFF00}1 {FFFFFF}до {FFFF00}1799", main_color)
+						ShowDialog(23)
+					else
+						ini4[GhettoMateSettings].TimerNotifyMO = input
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое время таймера составляет: {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд", main_color)
+						inicfg.save(ini4, directIni4)
+						ShowDialog(23)
+					end
 				else
 					ShowDialog(23)
 				end
@@ -1039,7 +1112,7 @@ function imgui.OnDrawFrame()
 	ini[GhettoMateConfig].Y = pos.y
 	inicfg.save(ini, directIni)
 	
-if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
+	if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
 		color[1] = "{808080}"
 	else
 		if timerM[1] == 1 then
@@ -1235,8 +1308,53 @@ if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
 	imgui.Separator()
 	imgui.TextColoredRGB(u8:decode"Денег награблено: " .. ini2[GhettoMateMoney].money)
 	imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count)
-
 	imgui.End()
+	
+	if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
+		colorMO[1] = "{808080}"
+	else
+		if timerMO[1] == 1 then
+			colorMO[1] = "{d10000}"
+		else
+			colorMO[1] = "{06940f}"
+		end
+	end
+	if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
+		colorMO[2] = "{808080}"
+	else
+		if timerMO[2] == 1 then
+			colorMO[2] = "{d10000}"
+		else
+			colorMO[2] = "{06940f}"
+		end
+	end
+	if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
+		colorMO[3] = "{808080}"
+	else
+		if timerMO[3] == 1 then
+			colorMO[3] = "{d10000}"
+		else
+			colorMO[3] = "{06940f}"
+		end
+	end
+	
+	imgui.SetNextWindowPos(imgui.ImVec2(0, 4.5 / 10 * resY))
+	imgui.SetNextWindowSize(imgui.ImVec2(resX / 8.5, resY*0.08))
+	imgui.SetMouseCursor(-1)
+
+	imgui.Begin("MO HUD", _, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoMove)
+	
+	imgui.TextColoredRGB(u8"1.  MOLS")
+		imgui.SameLine((resX/5) / 3)
+	imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
+	imgui.TextColoredRGB(u8"2.  MOSF")
+		imgui.SameLine((resX/5) / 3)
+	imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
+	imgui.TextColoredRGB(u8"3.  MOLV")
+		imgui.SameLine((resX/5) / 3)
+	imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
+	imgui.End()
+	
 end
 
 function Waiting()        
@@ -1246,10 +1364,24 @@ function Waiting()
 	end
 end
 
+function MOWaiting()        
+	if MOtimer == true then
+		wait(10000)
+		MOtimer = false
+	end
+end
+
 function Waiting2()       
 	if sideTimer == true then
 		wait(1000)
 		sideTimer = false
+	end
+end
+
+function MOWaiting2()       
+	if MOsideTimer == true then
+		wait(1000)
+		MOsideTimer = false
 	end
 end
 
@@ -1443,6 +1575,48 @@ function Timer()
 	end
 end
 
+function TimerMO()
+	if MOtimer == false then
+		if totalSeconds == ini3[SecondsMO].time1 then
+			MOTime[1] = true
+			MOTimeFunction()
+			MOtimer = true
+			MOWait:run()
+		end
+		if totalSeconds == ini3[SecondsMO].time2 then
+			MOTime[2] = true
+			MOTimeFunction()
+			MOtimer = true
+			MOWait:run()
+		end
+		if totalSeconds == ini3[SecondsMO].time3 then
+			MOTime[3] = true
+			MOTimeFunction()
+			MOtimer = true
+			MOWait:run()
+		end
+	end
+	if ini4[GhettoMateSettings].NotifyLarek then
+		if MOsideTimer == false then
+			if totalSeconds == ini3[SecondsMO].time1 - ini4[GhettoMateSettings].TimerNotifyMO then
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LS{FFFFFF} будет доступен через {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд!", main_color)
+				MOsideTimer = true
+				Wait2:run()
+			end
+			if totalSeconds == ini3[SecondsMO].time2 - ini4[GhettoMateSettings].TimerNotifyMO then
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LS{FFFFFF} будет доступен через {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд!", main_color)
+				MOsideTimer = true
+				Wait2:run()
+			end
+			if totalSeconds == ini3[SecondsMO].time3 - ini4[GhettoMateSettings].TimerNotifyMO then
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LS{FFFFFF} будет доступен через {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд!", main_color)
+				MOsideTimer = true
+				Wait2:run()
+			end
+		end
+	end
+end
+
 function TimerM()
 	if totalSeconds <= ini3[GhettoMateSeconds].time1 then
 		timerM[1] = 1
@@ -1526,6 +1700,24 @@ function TimerM()
 	end
 end
 
+function TimerMMO()
+	if totalSeconds <= ini3[SecondsMO].time1 then
+		timerMO[1] = 1
+	else
+		timerMO[1] = 2
+	end
+	if totalSeconds <= ini3[SecondsMO].time2 then
+		timerMO[2] = 1
+	else
+		timerMO[2] = 2
+	end
+	if totalSeconds <= ini3[SecondsMO].time3 then
+		timerMO[3] = 1
+	else
+		timerMO[3] = 2
+	end
+end
+
 function Refresh()
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time1) > oneHour then
 		ini3[GhettoMateSeconds].time1 = 0
@@ -1606,6 +1798,24 @@ function Refresh()
 		ini3[GhettoMateSeconds].time16 = 0
 		ini3[GhettoMateTime].time16 = u8:decode"Неизвестно"
 		color[16] = "{808080}"
+	end
+end
+
+function RefreshMO()
+	if math.abs(totalSeconds - ini3[SecondsMO].time1) > oneHour then
+		ini3[SecondsMO].time1 = 0
+		ini3[TimeMO].time1 = u8:decode"Неизвестно"
+		color[1] = "{808080}"
+	end
+	if math.abs(totalSeconds - ini3[SecondsMO].time2) > oneHour then
+		ini3[SecondsMO].time2 = 0
+		ini3[TimeMO].time2 = u8:decode"Неизвестно"
+		color[2] = "{808080}"
+	end
+	if math.abs(totalSeconds - ini3[SecondsMO].time3) > oneHour then
+		ini3[SecondsMO].time3 = 0
+		ini3[TimeMO].time3 = u8:decode"Неизвестно"
+		color[3] = "{808080}"
 	end
 end
 
@@ -1784,14 +1994,16 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 	if int == 23 then 
 		dialogLine, dialogTextToList = {}, {}
 		dialogLine[#dialogLine + 1] = u8:decode'  1. Уведомления от Larek\t' .. (ini4[GhettoMateSettings].NotifyLarek and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  2. Таймер уведомлений Larek\t' .. ini4[GhettoMateSettings].TimerNotifyLarek
+		dialogLine[#dialogLine + 1] = u8:decode'  2. Таймер уведомлений от Larek\t' .. ini4[GhettoMateSettings].TimerNotifyLarek
 		dialogLine[#dialogLine + 1] = u8:decode'  3. Уведомления от Ugonyala\t' .. (ini4[GhettoMateSettings].NotifyUgonyala and '{06940f}ON' or '{d10000}OFF') 
 		dialogLine[#dialogLine + 1] = u8:decode'  4. Анимация угона\t' .. (ini4[GhettoMateSettings].AnimUgonyala and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'  5. Выбрать анимацию угона\t' .. ini4[GhettoMateSettings].IdAnimUgonyala
 		dialogLine[#dialogLine + 1] = u8:decode'  6. Уведомления от Find\t' .. (ini4[GhettoMateSettings].NotifyFind and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'  7. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  7. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = '  8. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия')
+		dialogLine[#dialogLine + 1] = u8:decode'  8. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode'  9. Уведомления от MO\t' .. (ini4[GhettoMateSettings].TimerNotifyMO and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode' 10. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO
+		dialogLine[#dialogLine + 1] = '  11. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия')
 		
 		local text3 = ""
 		for k,v in pairs(dialogLine) do
@@ -1805,6 +2017,10 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 	
 	if int == 25 then
 		sampShowDialog(1005, u8:decode"Анимация", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
+	end
+	
+	if int == 26 then
+		sampShowDialog(1006, u8:decode"Таймер", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
 	end
 		
 	if int == 1 then
@@ -1959,6 +2175,21 @@ function MagazTimeFunction()
 	end
 end
 
+function MOTimeFunction()
+	if MOTime[1] == true then
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LS  {FFFFFF}снова доступен для ограбления!", main_color)
+		MOTime[1] = false
+	end
+	if MOTime[2] == true then
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO SF  {FFFFFF}снова доступен для ограбления!", main_color)
+		MOTime[2] = false
+	end
+	if MOTime[3] == true then
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LV  {FFFFFF}снова доступен для ограбления!", main_color)
+		MOTime[3] = false
+	end
+end
+
 function sampev.onSendPickedUpPickup(pickupId)
 	if pickupId == 1039 then  -- вошел
 		Magaz1 = true
@@ -2056,6 +2287,25 @@ function sampev.onSendPickedUpPickup(pickupId)
 	if pickupId == 1030 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 then 
 		Magaz16 = false
 	end
+	
+	if pickupId == 1818 then
+		MOLS = true
+	end
+	if pickupId == 1817 or pickupId == 1820 or pickupID == 1822 or pickupId == 1029 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023  then
+		MOLS = false
+	end
+	if pickupId == 1820 then
+		MOSF = true
+	end
+	if pickupId == 1819 or pickupId == 1818 or pickupID == 1822 or pickupId == 1029 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023  then
+		MOSF = false
+	end
+	if pickupId == 1822 then
+		MOLV = true
+	end
+	if pickupId == 1821 or pickupId == 1820 or pickupID == 1818 or pickupId == 1029 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023  then
+		MOLV = false
+	end
 end
 
 function sampev.onServerMessage(color, text)
@@ -2064,8 +2314,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[1] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time1 = timerMagaz[1]
 				inicfg.save(ini3, directIni3)
-			hourM[1], minuteM[1], secondM[1] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time1 = hourM[1] * 3600 + minuteM[1] * 60 + secondM[1]
+			hourM[1], minuteM[1], secondsM[1] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time1 = hourM[1] * 3600 + minuteM[1] * 60 + secondsM[1]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2074,8 +2324,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[2] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time2 = timerMagaz[2]
 				inicfg.save(ini3, directIni3)
-			hourM[2], minuteM[2], secondM[2] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time2 = hourM[2] * 3600 + minuteM[2] * 60 + secondM[2]
+			hourM[2], minuteM[2], secondsM[2] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time2 = hourM[2] * 3600 + minuteM[2] * 60 + secondsM[2]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2084,8 +2334,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[3] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time3 = timerMagaz[3]
 				inicfg.save(ini3, directIni3)
-			hourM[3], minuteM[3], secondM[3] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time3 = hourM[3] * 3600 + minuteM[3] * 60 + secondM[3]
+			hourM[3], minuteM[3], secondsM[3] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time3 = hourM[3] * 3600 + minuteM[3] * 60 + secondsM[3]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2094,8 +2344,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[4] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time4 = timerMagaz[4]
 				inicfg.save(ini3, directIni3)
-			hourM[4], minuteM[4], secondM[4] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time4 = hourM[4] * 3600 + minuteM[4] * 60 + secondM[4]
+			hourM[4], minuteM[4], secondsM[4] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time4 = hourM[4] * 3600 + minuteM[4] * 60 + secondsM[4]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2104,8 +2354,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[5] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time5 = timerMagaz[5]
 				inicfg.save(ini3, directIni3)
-			hourM[5], minuteM[5], secondM[5] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time5 = hourM[5] * 3600 + minuteM[5] * 60 + secondM[5]
+			hourM[5], minuteM[5], secondsM[5] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time5 = hourM[5] * 3600 + minuteM[5] * 60 + secondsM[5]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2114,8 +2364,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[6] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time6 = timerMagaz[6]
 				inicfg.save(ini3, directIni3)
-			hourM[6], minuteM[6], secondM[6] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time6 = hourM[6] * 3600 + minuteM[6] * 60 + secondM[6]
+			hourM[6], minuteM[6], secondsM[6] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time6 = hourM[6] * 3600 + minuteM[6] * 60 + secondsM[6]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2124,8 +2374,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[7] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time7 = timerMagaz[7]
 				inicfg.save(ini3, directIni3)
-			hourM[7], minuteM[7], secondM[7] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time7 = hourM[7] * 3600 + minuteM[7] * 60 + secondM[7]
+			hourM[7], minuteM[7], secondsM[7] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time7 = hourM[7] * 3600 + minuteM[7] * 60 + secondsM[7]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2134,8 +2384,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[8] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time8 = timerMagaz[8]
 				inicfg.save(ini3, directIni3)
-			hourM[8], minuteM[8], secondM[8] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time8 = hourM[8] * 3600 + minuteM[8] * 60 + secondM[8]
+			hourM[8], minuteM[8], secondsM[8] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time8 = hourM[8] * 3600 + minuteM[8] * 60 + secondsM[8]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2144,8 +2394,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[9] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time9 = timerMagaz[9]
 				inicfg.save(ini3, directIni3)
-			hourM[9], minuteM[9], secondM[9] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time9 = hourM[9] * 3600 + minuteM[9] * 60 + secondM[9]
+			hourM[9], minuteM[9], secondsM[9] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time9 = hourM[9] * 3600 + minuteM[9] * 60 + secondsM[9]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2154,8 +2404,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[10] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time10 = timerMagaz[10]
 				inicfg.save(ini3, directIni3)
-			hourM[10], minuteM[10], secondM[10] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time10 = hourM[10] * 3600 + minuteM[10] * 60 + secondM[10]
+			hourM[10], minuteM[10], secondsM[10] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time10 = hourM[10] * 3600 + minuteM[10] * 60 + secondsM[10]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2164,8 +2414,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[11] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time11 = timerMagaz[11]
 				inicfg.save(ini3, directIni3)
-			hourM[11], minuteM[11], secondM[11] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time11 = hourM[11] * 3600 + minuteM[11] * 60 + secondM[11]
+			hourM[11], minuteM[11], secondsM[11] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time11 = hourM[11] * 3600 + minuteM[11] * 60 + secondsM[11]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2174,8 +2424,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[12] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time12 = timerMagaz[12]
 				inicfg.save(ini3, directIni3)
-			hourM[12], minuteM[12], secondM[12] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time12 = hourM[12] * 3600 + minuteM[12] * 60 + secondM[12]
+			hourM[12], minuteM[12], secondsM[12] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time12 = hourM[12] * 3600 + minuteM[12] * 60 + secondsM[12]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2184,8 +2434,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[13] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time13 = timerMagaz[13]
 				inicfg.save(ini3, directIni3)
-			hourM[13], minuteM[13], secondM[13] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time13 = hourM[13] * 3600 + minuteM[13] * 60 + secondM[13]
+			hourM[13], minuteM[13], secondsM[13] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time13 = hourM[13] * 3600 + minuteM[13] * 60 + secondsM[13]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2194,8 +2444,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[14] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time14 = timerMagaz[14]
 				inicfg.save(ini3, directIni3)
-			hourM[14], minuteM[14], secondM[14] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time14 = hourM[14] * 3600 + minuteM[14] * 60 + secondM[14]
+			hourM[14], minuteM[14], secondsM[14] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time14 = hourM[14] * 3600 + minuteM[14] * 60 + secondsM[14]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2204,8 +2454,8 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[15] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time15 = timerMagaz[15]
 				inicfg.save(ini3, directIni3)
-			hourM[15], minuteM[15], secondM[15] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time15 = hourM[15] * 3600 + minuteM[15] * 60 + secondM[15]
+			hourM[15], minuteM[15], secondsM[15] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time15 = hourM[15] * 3600 + minuteM[15] * 60 + secondsM[15]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2214,8 +2464,38 @@ function sampev.onServerMessage(color, text)
 			timerMagaz[16] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
 				ini3[GhettoMateTime].time16 = timerMagaz[16]
 				inicfg.save(ini3, directIni3)
-			hourM[16], minuteM[16], secondM[16] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
-			ini3[GhettoMateSeconds].time16 = hourM[16] * 3600 + minuteM[16] * 60 + secondM[16]
+			hourM[16], minuteM[16], secondsM[16] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[GhettoMateSeconds].time16 = hourM[16] * 3600 + minuteM[16] * 60 + secondsM[16]
+			inicfg.save(ini3, directIni3)
+		end
+	end
+	if MOLS then
+		if string.find(text, u8:decode" Следующее ограбление будет доступно в .+") then
+			timerMagaz[1] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
+				ini3[TimeMO].time1 = timerMagaz[1]
+				inicfg.save(ini3, directIni3)
+			hourMO[1], minuteMO[1], secondsMO[1] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[SecondsMO].time1 = hourMO[1] * 3600 + minuteMO[1] * 60 + secondsMO[1]
+			inicfg.save(ini3, directIni3)
+		end
+	end
+	if MOSF then
+		if string.find(text, u8:decode" Следующее ограбление будет доступно в .+") then
+			timerMagaz[2] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
+				ini3[TimeMO].time2 = timerMagaz[2]
+				inicfg.save(ini3, directIni3)
+			hourMO[2], minuteMO[2], secondsMO[2] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[SecondsMO].time2 = hourMO[2] * 3600 + minuteMO[2] * 60 + secondsMO[2]
+			inicfg.save(ini3, directIni3)
+		end
+	end
+	if MOLV then
+		if string.find(text, u8:decode" Следующее ограбление будет доступно в .+") then
+			timerMagaz[3] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
+				ini3[TimeMO].time3 = timerMagaz[3]
+				inicfg.save(ini3, directIni3)
+			hourMO[3], minuteMO[3], secondsMO[3] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
+			ini3[SecondsMO].time3 = hourMO[3] * 3600 + minuteMO[3] * 60 + secondsMO[3]
 			inicfg.save(ini3, directIni3)
 		end
 	end
@@ -2284,8 +2564,9 @@ function sampev.onServerMessage(color, text)
 end
 
 function sampev.onDisplayGameText(style, time, text)
-	if Magaz1 == true or Magaz2 == true or Magaz3 == true or Magaz4 == true or Magaz5 == true or Magaz6 == true or Magaz7 == true or Magaz8 == true or Magaz9 == true or Magaz10 == true or Magaz11 == true or Magaz12 == true or Magaz13 == true or Magaz14 == true or Magaz15 == true or Magaz16 == true then 
+	if Magaz1 or Magaz2 or Magaz3 or Magaz4 or Magaz5 or Magaz6 or Magaz7 or Magaz8 or Magaz9 or Magaz10 or Magaz11 or Magaz12 or Magaz13 or Magaz14 or Magaz15 or Magaz16 then 
 		if string.find(text, "$5000") then
+			sampAddChatMessage("+5000", -1)
 			ini2[GhettoMateMoney].money  = ini2[GhettoMateMoney].money + 5000
 			ini2[GhettoMateMoney].count  = ini2[GhettoMateMoney].count + 1
 			ini2[GhettoMateMoney].count2 = ini2[GhettoMateMoney].count2 + 1
@@ -2526,14 +2807,59 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 	end
-
-	if args[1] == '/notify' then
-		if notify then
-			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Уведомления отключены", main_color)
-			notify = false
-		else
-			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Уведомления включены", main_color)
-			notify = true
+	
+	if args[1] == '/autogetguns' then
+		cmd_autogetguns()
+	end
+	
+	if args[1] == '/l' then
+		if args[2] == '1' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name1)
+		end
+		if args[2] == '2' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name2)
+		end
+		if args[2] == '3' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name3)
+		end
+		if args[2] == '4' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name4)
+		end
+		if args[2] == '5' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name5)
+		end
+		if args[2] == '6' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name6)
+		end
+		if args[2] == '7' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name7)
+		end
+		if args[2] == '8' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name8)
+		end
+		if args[2] == '9' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name9)
+		end
+		if args[2] == '10' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name10)
+		end
+		if args[2] == '11' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name11)
+		end
+		if args[2] == '12' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name12)
+		end
+		if args[2] == '13' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name13)
+		end
+		if args[2] == '14' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name14)
+		end
+		if args[2] == '15' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name15)
+		end
+		if args[2] == '16' then
+			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name16)
 		end
 	end
 end
