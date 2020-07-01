@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek")
 script_version('21/06/2020')
-script_version_number(4)
+script_version_number(5)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -22,6 +22,7 @@ local ini3 = {}
 local ini4 = {}
 
 local main_window_state = imgui.ImBool(false)
+local secondary_window_state = imgui.ImBool(false)
 local text_buffer = imgui.ImBuffer(256)
 
 local resX, resY = getScreenResolution()
@@ -64,7 +65,6 @@ local MagazTime = {false, false, false, false, false, false, false, false, false
 local timer = false
 local sideTimer = false
 local CalibrationA = false
-local interface = false
 --AutoGetGuns--
 local GetGuns = false
 local NickSklad = 0
@@ -334,24 +334,13 @@ function main()
 	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Успешно загрузился!", main_color)
 	
 	imgui.ApplyCustomStyle()
-	imgui.Process = true
+	imgui.Process = false
 	
 	while true do
 		wait(250)
 		
 		paused = isGamePaused()
 		imgui.ShowCursor = false
-		
-		if main_window_state.v == false then
-			imgui.Process = false
-		end
-		
-		if interface == true then
-			main_window_state.v = true
-			imgui.Process = main_window_state.v
-		else
-			main_window_state.v = false
-		end
 		
 		GhettoMateConfig = string.format('GhettoMateConfig')
 		ini = inicfg.load(GhettoMateConfig, directIni)
@@ -396,10 +385,14 @@ function main()
 			if result and button == 1 then
 				if dialogLine[list + 1]     ==  u8:decode'  1. Larek\t' then
 					ShowDialog(1)
-				elseif dialogLine[list + 1] ==  u8:decode'  2. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF') then
+				elseif dialogLine[list + 1] ==  u8:decode'  2. MO\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF') then
+					secondary_window_state.v = not secondary_window_state.v
+					imgui.Process = secondary_window_state.v
+					ShowDialog(20)
+				elseif dialogLine[list + 1] ==  u8:decode'  3. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF') then
 					cmd_autogetguns()
 					ShowDialog(20)
-				elseif dialogLine[list + 1] ==  u8:decode'  3. Find\t'  .. (Find and '{06940f}ON' or '{d10000}OFF') then
+				elseif dialogLine[list + 1] ==  u8:decode'  4. Find\t'  .. (Find and '{06940f}ON' or '{d10000}OFF') then
 					if Find == true then
 						Find = false
 						deleteCheckpoint(checkpoint)
@@ -409,7 +402,7 @@ function main()
 						removeBlip(blip)
 						ShowDialog(21)
 					end
-				elseif dialogLine[list + 1] ==  u8:decode'  4. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF') then
+				elseif dialogLine[list + 1] ==  u8:decode'  5. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF') then
 					if search == true then
 						sampSendChat("/fc")
 					else
@@ -465,7 +458,7 @@ function main()
 						inicfg.save(ini4, directIni4)
 					elseif dialogLine[list + 1] == ' 11. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия') then
 						if script.update then
-							interface = false
+							imgui.Process = false
 							update()
 						else
 							sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Последняя версия уже установлена", main_color)
@@ -517,8 +510,9 @@ function main()
 						ShowDialog(17, dialogTextToList[list + 1], input, false, 'config', 'MagazName15')
 					elseif dialogLine[list + 1] ==  ' 16. ' .. ini[GhettoMateName].Name16 .. '\t' .. color[16] .. ini3[GhettoMateTime].time16 then
 						ShowDialog(18, dialogTextToList[list + 1], input, false, 'config', 'MagazName16')
-					elseif dialogLine[list + 1] == '> Larek HUD\t' .. (interface and '{06940f}ON' or '{d10000}OFF') then
-						interface = not interface
+					elseif dialogLine[list + 1] == '> Larek HUD\t' .. (main_window_state.v and '{06940f}ON' or '{d10000}OFF') then
+						main_window_state.v = not main_window_state.v
+						imgui.Process = main_window_state.v
 						ShowDialog(1)
 					elseif dialogLine[list + 1] == u8:decode'> Фиксация HUDa\t' .. (InterfacePosition and '{06940f}ON' or '{d10000}OFF') then
 						InterfacePosition = not InterfacePosition
@@ -984,8 +978,14 @@ function main()
 end
 
 function cmd_hud(arg)
-	interface = not interface
-end 
+	main_window_state.v = not main_window_state.v
+	imgui.Process = main_window_state.v
+end
+
+function cmd_MOhud(arg)
+	secondary_window_state.v = not secondary_window_state.v
+	imgui.Process = secondary_window_state.v
+end
 
 function imgui.ApplyCustomStyle()
     imgui.SwitchContext()
@@ -1101,260 +1101,263 @@ function imgui.TextColoredRGB(text)
     render_text(text)
 end
 function imgui.OnDrawFrame()
-	if InterfacePosition == true then 
-		imgui.SetNextWindowPos(imgui.ImVec2(ini[GhettoMateConfig].X, ini[GhettoMateConfig].Y))
+	if main_window_state.v then
+		if InterfacePosition == true then 
+			imgui.SetNextWindowPos(imgui.ImVec2(ini[GhettoMateConfig].X, ini[GhettoMateConfig].Y))
+			inicfg.save(ini, directIni)
+		end
+		imgui.SetNextWindowSize(imgui.ImVec2(resX/8.5, resY/20*6.6))
+		imgui.Begin("Larek HUD", _, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
+		local pos = imgui.GetWindowPos()
+		ini[GhettoMateConfig].X = pos.x
+		ini[GhettoMateConfig].Y = pos.y
 		inicfg.save(ini, directIni)
-	end
-	imgui.SetNextWindowSize(imgui.ImVec2(resX/8.5, resY/20*6.6))
-	imgui.Begin("Larek HUD", _, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
-	local pos = imgui.GetWindowPos()
-	ini[GhettoMateConfig].X = pos.x
-	ini[GhettoMateConfig].Y = pos.y
-	inicfg.save(ini, directIni)
-	
-	if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
-		color[1] = "{808080}"
-	else
-		if timerM[1] == 1 then
-			color[1] = "{d10000}"
+		
+		if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
+			color[1] = "{808080}"
 		else
-			color[1] = "{06940f}"
+			if timerM[1] == 1 then
+				color[1] = "{d10000}"
+			else
+				color[1] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then
-		color[2] = "{808080}"
-	else
-		if timerM[2] == 1 then
-			color[2] = "{d10000}"
+		if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then
+			color[2] = "{808080}"
 		else
-			color[2] = "{06940f}"
+			if timerM[2] == 1 then
+				color[2] = "{d10000}"
+			else
+				color[2] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then
-		color[3] = "{808080}"
-	else
-		if timerM[3] == 1 then
-			color[3] = "{d10000}"
+		if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then
+			color[3] = "{808080}"
 		else
-			color[3] = "{06940f}"
+			if timerM[3] == 1 then
+				color[3] = "{d10000}"
+			else
+				color[3] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then
-		color[4] = "{808080}"
-	else
-		if timerM[4] == 1 then
-			color[4] = "{d10000}"
+		if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then
+			color[4] = "{808080}"
 		else
-			color[4] = "{06940f}"
+			if timerM[4] == 1 then
+				color[4] = "{d10000}"
+			else
+				color[4] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then
-		color[5] = "{808080}"
-	else
-		if timerM[5] == 1 then
-			color[5] = "{d10000}"
+		if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then
+			color[5] = "{808080}"
 		else
-			color[5] = "{06940f}"
+			if timerM[5] == 1 then
+				color[5] = "{d10000}"
+			else
+				color[5] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then
-		color[6] = "{808080}"
-	else
-		if timerM[6] == 1 then
-			color[6] = "{d10000}"
+		if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then
+			color[6] = "{808080}"
 		else
-			color[6] = "{06940f}"
+			if timerM[6] == 1 then
+				color[6] = "{d10000}"
+			else
+				color[6] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then
-		color[7] = "{808080}"
-	else
-		if timerM[7] == 1 then
-			color[7] = "{d10000}"
+		if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then
+			color[7] = "{808080}"
 		else
-			color[7] = "{06940f}"
+			if timerM[7] == 1 then
+				color[7] = "{d10000}"
+			else
+				color[7] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then
-		color[8] = "{808080}"
-	else
-		if timerM[8] == 1 then
-			color[8] = "{d10000}"
+		if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then
+			color[8] = "{808080}"
 		else
-			color[8] = "{06940f}"
+			if timerM[8] == 1 then
+				color[8] = "{d10000}"
+			else
+				color[8] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then
-		color[9] = "{808080}"
-	else
-		if timerM[9] == 1 then
-			color[9] = "{d10000}"
+		if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then
+			color[9] = "{808080}"
 		else
-			color[9] = "{06940f}"
+			if timerM[9] == 1 then
+				color[9] = "{d10000}"
+			else
+				color[9] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then
-		color[10] = "{808080}"
-	else
-		if timerM[10] == 1 then
-			color[10] = "{d10000}"
+		if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then
+			color[10] = "{808080}"
 		else
-			color[10] = "{06940f}"
+			if timerM[10] == 1 then
+				color[10] = "{d10000}"
+			else
+				color[10] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then
-		color[11] = "{808080}"
-	else
-		if timerM[11] == 1 then
-			color[11] = "{d10000}"
+		if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then
+			color[11] = "{808080}"
 		else
-			color[11] = "{06940f}"
+			if timerM[11] == 1 then
+				color[11] = "{d10000}"
+			else
+				color[11] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then
-		color[12] = "{808080}"
-	else
-		if timerM[12] == 1 then
-			color[12] = "{d10000}"
+		if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then
+			color[12] = "{808080}"
 		else
-			color[12] = "{06940f}"
+			if timerM[12] == 1 then
+				color[12] = "{d10000}"
+			else
+				color[12] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then
-		color[13] = "{808080}"
-	else
-		if timerM[13] == 1 then
-			color[13] = "{d10000}"
+		if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then
+			color[13] = "{808080}"
 		else
-			color[13] = "{06940f}"
+			if timerM[13] == 1 then
+				color[13] = "{d10000}"
+			else
+				color[13] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then
-		color[14] = "{808080}"
-	else
-		if timerM[14] == 1 then
-			color[14] = "{d10000}"
+		if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then
+			color[14] = "{808080}"
 		else
-			color[14] = "{06940f}"
+			if timerM[14] == 1 then
+				color[14] = "{d10000}"
+			else
+				color[14] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then
-		color[15] = "{808080}"
-	else
-		if timerM[15] == 1 then
-			color[15] = "{d10000}"
+		if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then
+			color[15] = "{808080}"
 		else
-			color[15] = "{06940f}"
+			if timerM[15] == 1 then
+				color[15] = "{d10000}"
+			else
+				color[15] = "{06940f}"
+			end
 		end
-	end
-	if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then
-		color[16] = "{808080}"
-	else
-		if timerM[16] == 1 then
-			color[16] = "{d10000}"
+		if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then
+			color[16] = "{808080}"
 		else
-			color[16] = "{06940f}"
-		end
-	end	
-	
-	imgui.TextColoredRGB(u8"1.  " .. ini[GhettoMateName].Name1)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[1] .. ini3[GhettoMateTime].time1)
-	imgui.TextColoredRGB(u8"2.  " .. ini[GhettoMateName].Name2)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8""  .. color[2] .. ini3[GhettoMateTime].time2)	
-	imgui.TextColoredRGB(u8"3.  " .. ini[GhettoMateName].Name3)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[3] .. ini3[GhettoMateTime].time3)
-	imgui.TextColoredRGB(u8"4.  " .. ini[GhettoMateName].Name4)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[4] .. ini3[GhettoMateTime].time4)
-	imgui.TextColoredRGB(u8"5.  " .. ini[GhettoMateName].Name5)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[5] .. ini3[GhettoMateTime].time5)
-	imgui.TextColoredRGB(u8"6.  " .. ini[GhettoMateName].Name6)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[6] .. ini3[GhettoMateTime].time6)	
-	imgui.TextColoredRGB(u8"7.  " .. ini[GhettoMateName].Name7)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[7] .. ini3[GhettoMateTime].time7)	
-	imgui.TextColoredRGB(u8"8.  " .. ini[GhettoMateName].Name8)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[8] .. ini3[GhettoMateTime].time8)
-	imgui.TextColoredRGB(u8"9.  " .. ini[GhettoMateName].Name9)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[9] .. ini3[GhettoMateTime].time9)
-	imgui.TextColoredRGB(u8"10. " .. ini[GhettoMateName].Name10)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[10] .. ini3[GhettoMateTime].time10)
-	imgui.TextColoredRGB(u8"11. " .. ini[GhettoMateName].Name11)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[11] .. ini3[GhettoMateTime].time11)
-	imgui.TextColoredRGB(u8"12. " .. ini[GhettoMateName].Name12)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[12] .. ini3[GhettoMateTime].time12)	
-	imgui.TextColoredRGB(u8"13. " .. ini[GhettoMateName].Name13)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[13] .. ini3[GhettoMateTime].time13)
-	imgui.TextColoredRGB(u8"14. " .. ini[GhettoMateName].Name14)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[14] .. ini3[GhettoMateTime].time14)
-	imgui.TextColoredRGB(u8"15. " .. ini[GhettoMateName].Name15)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[15] .. ini3[GhettoMateTime].time15)
-	imgui.TextColoredRGB(u8"16. " .. ini[GhettoMateName].Name16)
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. color[16] .. ini3[GhettoMateTime].time16)	
-	imgui.Separator()
-	imgui.TextColoredRGB(u8:decode"Денег награблено: " .. ini2[GhettoMateMoney].money)
-	imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count)
-	imgui.End()
-	
-	if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
-		colorMO[1] = "{808080}"
-	else
-		if timerMO[1] == 1 then
-			colorMO[1] = "{d10000}"
-		else
-			colorMO[1] = "{06940f}"
-		end
-	end
-	if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
-		colorMO[2] = "{808080}"
-	else
-		if timerMO[2] == 1 then
-			colorMO[2] = "{d10000}"
-		else
-			colorMO[2] = "{06940f}"
-		end
-	end
-	if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
-		colorMO[3] = "{808080}"
-	else
-		if timerMO[3] == 1 then
-			colorMO[3] = "{d10000}"
-		else
-			colorMO[3] = "{06940f}"
-		end
+			if timerM[16] == 1 then
+				color[16] = "{d10000}"
+			else
+				color[16] = "{06940f}"
+			end
+		end	
+		
+		imgui.TextColoredRGB(u8"1.  " .. ini[GhettoMateName].Name1)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[1] .. ini3[GhettoMateTime].time1)
+		imgui.TextColoredRGB(u8"2.  " .. ini[GhettoMateName].Name2)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8""  .. color[2] .. ini3[GhettoMateTime].time2)	
+		imgui.TextColoredRGB(u8"3.  " .. ini[GhettoMateName].Name3)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[3] .. ini3[GhettoMateTime].time3)
+		imgui.TextColoredRGB(u8"4.  " .. ini[GhettoMateName].Name4)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[4] .. ini3[GhettoMateTime].time4)
+		imgui.TextColoredRGB(u8"5.  " .. ini[GhettoMateName].Name5)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[5] .. ini3[GhettoMateTime].time5)
+		imgui.TextColoredRGB(u8"6.  " .. ini[GhettoMateName].Name6)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[6] .. ini3[GhettoMateTime].time6)	
+		imgui.TextColoredRGB(u8"7.  " .. ini[GhettoMateName].Name7)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[7] .. ini3[GhettoMateTime].time7)	
+		imgui.TextColoredRGB(u8"8.  " .. ini[GhettoMateName].Name8)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[8] .. ini3[GhettoMateTime].time8)
+		imgui.TextColoredRGB(u8"9.  " .. ini[GhettoMateName].Name9)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[9] .. ini3[GhettoMateTime].time9)
+		imgui.TextColoredRGB(u8"10. " .. ini[GhettoMateName].Name10)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[10] .. ini3[GhettoMateTime].time10)
+		imgui.TextColoredRGB(u8"11. " .. ini[GhettoMateName].Name11)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[11] .. ini3[GhettoMateTime].time11)
+		imgui.TextColoredRGB(u8"12. " .. ini[GhettoMateName].Name12)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[12] .. ini3[GhettoMateTime].time12)	
+		imgui.TextColoredRGB(u8"13. " .. ini[GhettoMateName].Name13)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[13] .. ini3[GhettoMateTime].time13)
+		imgui.TextColoredRGB(u8"14. " .. ini[GhettoMateName].Name14)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[14] .. ini3[GhettoMateTime].time14)
+		imgui.TextColoredRGB(u8"15. " .. ini[GhettoMateName].Name15)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[15] .. ini3[GhettoMateTime].time15)
+		imgui.TextColoredRGB(u8"16. " .. ini[GhettoMateName].Name16)
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. color[16] .. ini3[GhettoMateTime].time16)	
+		imgui.Separator()
+		imgui.TextColoredRGB(u8:decode"Денег награблено: " .. ini2[GhettoMateMoney].money)
+		imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count)
+		imgui.End()
 	end
 	
-	imgui.SetNextWindowPos(imgui.ImVec2(0, 4.5 / 10 * resY))
-	imgui.SetNextWindowSize(imgui.ImVec2(resX / 8.5, resY*0.08))
-	imgui.SetMouseCursor(-1)
+	if secondary_window_state.v then
+		if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
+			colorMO[1] = "{808080}"
+		else
+			if timerMO[1] == 1 then
+				colorMO[1] = "{d10000}"
+			else
+				colorMO[1] = "{06940f}"
+			end
+		end
+		if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
+			colorMO[2] = "{808080}"
+		else
+			if timerMO[2] == 1 then
+				colorMO[2] = "{d10000}"
+			else
+				colorMO[2] = "{06940f}"
+			end
+		end
+		if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
+			colorMO[3] = "{808080}"
+		else
+			if timerMO[3] == 1 then
+				colorMO[3] = "{d10000}"
+			else
+				colorMO[3] = "{06940f}"
+			end
+		end
+		
+		imgui.SetNextWindowPos(imgui.ImVec2(0, 4.5 / 10 * resY))
+		imgui.SetNextWindowSize(imgui.ImVec2(resX / 8.5, resY*0.08))
+		imgui.SetMouseCursor(-1)
 
-	imgui.Begin("MO HUD", _, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoMove)
-	
-	imgui.TextColoredRGB(u8"1.  MOLS")
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
-	imgui.TextColoredRGB(u8"2.  MOSF")
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
-	imgui.TextColoredRGB(u8"3.  MOLV")
-		imgui.SameLine((resX/5) / 3)
-	imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
-	imgui.End()
-	
+		imgui.Begin("MO HUD", _, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoMove)
+		
+		imgui.TextColoredRGB(u8"1.  MOLS")
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
+		imgui.TextColoredRGB(u8"2.  MOSF")
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
+		imgui.TextColoredRGB(u8"3.  MOLV")
+			imgui.SameLine((resX/5) / 3)
+		imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
+		imgui.End()
+	end
 end
 
 function Waiting()        
@@ -1971,9 +1974,10 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 	if int == 20 then 
 		dialogLine, dialogTextToList = {}, {}
 		dialogLine[#dialogLine + 1] = '  1. Larek\t'
-		dialogLine[#dialogLine + 1] = '  2. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = '  3. Find\t' .. (Find and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = '  4. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  2. MO\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  3. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  4. Find\t' .. (Find and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  5. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'> Настройки\t'
 		
 		local text = ""
@@ -2003,7 +2007,7 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = u8:decode'  8. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'  9. Уведомления от MO\t' .. (ini4[GhettoMateSettings].TimerNotifyMO and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode' 10. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO
-		dialogLine[#dialogLine + 1] = '  11. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия')
+		dialogLine[#dialogLine + 1] = ' 11. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия')
 		
 		local text3 = ""
 		for k,v in pairs(dialogLine) do
