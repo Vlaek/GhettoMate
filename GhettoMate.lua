@@ -1,7 +1,7 @@
 script_name("GhettoMate")
-script_author("Vlaek")
-script_version('21/06/2020')
-script_version_number(5)
+script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
+script_version('03/07/2020')
+script_version_number(6)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -54,6 +54,7 @@ local minute = 0
 local second = 0
 local totalSeconds = 0
 local InterfacePosition = true
+local InterfacePositionMO = true
 
 local timerM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 local hourM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -98,6 +99,8 @@ local vehlist = {}
 local spam = true
 local notify = false
 local search = false
+--DRUGS
+local DrugsCount = 0
 
 local vehnames = {
   "Landstalker","Bravura","Buffalo","1","Perenniel","Sentinel","1","1","1","1","1","Infernus",
@@ -172,6 +175,8 @@ function main()
 	Wait2 = lua_thread.create_suspended(Waiting2)
 	MOWait2 = lua_thread.create_suspended(MOWaiting2)
 	DrugsWait = lua_thread.create_suspended(DrugsWaiting)
+	UseDrugsWait = lua_thread.create_suspended(UseDrugsWaiting)
+	MONotifyWait = lua_thread.create_suspended(MONotifyWaiting)
 	
 	AdressConfig = string.format("%s\\moonloader\\config", getGameDirectory())
 	AdressGhettoMate = string.format("%s\\moonloader\\config\\GhettoMate", getGameDirectory())
@@ -210,7 +215,9 @@ function main()
 			[GhettoMateConfig] = {
 				time = tonumber(0),
 				X = tonumber(0),
-				Y = tonumber(0)
+				Y = tonumber(0),
+				X_MO =tonumber(0),
+				Y_MO = tonumber(0)
 			}
 		}, directIni)
 		inicfg.save(ini, directIni)
@@ -226,6 +233,17 @@ function main()
 				count2 = tonumber(0),
 				count3 = tonumber(0),
 				count4 = tonumber(0)
+			}
+		}, directIni2)
+		inicfg.save(ini2, directIni2)
+	end
+	
+	GhettoMateMO = string.format('GhettoMateMO-%s', my_name)
+	if ini2[GhettoMateMO] == nil then
+		ini2 = inicfg.load({
+			[GhettoMateMO] = {
+				mats  = tonumber(0),
+				cars  = tonumber(0)
 			}
 		}, directIni2)
 		inicfg.save(ini2, directIni2)
@@ -318,7 +336,8 @@ function main()
 				NotifyDrugs=true,
 				NotifyAutoGetGuns=true,
 				TimerNotifyMO=tonumber(15),
-				NotifyMO=true
+				NotifyMO=true,
+				Health=120
 			}
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
@@ -385,10 +404,8 @@ function main()
 			if result and button == 1 then
 				if dialogLine[list + 1]     ==  u8:decode'  1. Larek\t' then
 					ShowDialog(1)
-				elseif dialogLine[list + 1] ==  u8:decode'  2. MO\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF') then
-					secondary_window_state.v = not secondary_window_state.v
-					imgui.Process = secondary_window_state.v
-					ShowDialog(20)
+				elseif dialogLine[list + 1] ==  u8:decode'  2. MO\t' then
+					ShowDialog(170)
 				elseif dialogLine[list + 1] ==  u8:decode'  3. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF') then
 					cmd_autogetguns()
 					ShowDialog(20)
@@ -397,6 +414,8 @@ function main()
 						Find = false
 						deleteCheckpoint(checkpoint)
 						removeBlip(blip)
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Поиск прекращен", main_color)
+						ShowDialog(20)
 					else
 						deleteCheckpoint(checkpoint)
 						removeBlip(blip)
@@ -410,6 +429,18 @@ function main()
 					end
 				elseif dialogLine[list + 1] ==  u8:decode'> Настройки\t' then
 					ShowDialog(23)
+				elseif dialogLine[list + 1] ==  u8:decode'> Помощь\t' then
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/larek {FFFFFF}- включить диалоговое окно Larek", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/lhud {FFFFFF}- включить Larek HUD", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/l (1,2, .. 16){FFFFFF} - указать в какой ларёк ехать + тайминг", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/mohud {FFFFFF}- включить MO HUD", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/mo (ls, sf и lv) {FFFFFF}- указать в какой МО ехать + тайминг", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/autogetguns {FFFFFF}- включить/выключить AutoGetGuns (* NumPad)", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/gfind (id){FFFFFF} - искать игрока по его id", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/fc (name) {FFFFFF}- искать машину по ее названию", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/fc {FFFFFF}- если без аргумента, то прекращает поиск", main_color)
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/drugs {FFFFFF}- заюзать наркотики", main_color)
+					ShowDialog(20)
 				else
 					ShowDialog(20)
 				end
@@ -442,21 +473,24 @@ function main()
 						ini4[GhettoMateSettings].NotifyFind = not ini4[GhettoMateSettings].NotifyFind
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  7. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF') then
+					elseif dialogLine[list + 1] ==  u8:decode'  7. Максимальное количество ХП\t' .. ini4[GhettoMateSettings].Health then
+						ShowDialog(27)
+						inicfg.save(ini4, directIni4)
+					elseif dialogLine[list + 1] ==  u8:decode'  8. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF') then
 						ini4[GhettoMateSettings].NotifyDrugs = not ini4[GhettoMateSettings].NotifyDrugs
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  8. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF') then
+					elseif dialogLine[list + 1] ==  u8:decode'  9. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF') then
 						ini4[GhettoMateSettings].NotifyAutoGetGuns = not ini4[GhettoMateSettings].NotifyAutoGetGuns
 						inicfg.save(ini4, directIni4)
 						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  9. Уведомления от MO\t' .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF') then
+					elseif dialogLine[list + 1] ==  u8:decode' 10. Уведомления от MO\t' .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF') then
 						ini4[GhettoMateSettings].NotifyMO = not ini4[GhettoMateSettings].NotifyMO
 						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] ==  u8:decode' 10. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO then
+					elseif dialogLine[list + 1] ==  u8:decode' 11. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO then
 						ShowDialog(26)
 						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] == ' 11. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия') then
+					elseif dialogLine[list + 1] == ' 12. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия') then
 						if script.update then
 							imgui.Process = false
 							update()
@@ -511,8 +545,7 @@ function main()
 					elseif dialogLine[list + 1] ==  ' 16. ' .. ini[GhettoMateName].Name16 .. '\t' .. color[16] .. ini3[GhettoMateTime].time16 then
 						ShowDialog(18, dialogTextToList[list + 1], input, false, 'config', 'MagazName16')
 					elseif dialogLine[list + 1] == '> Larek HUD\t' .. (main_window_state.v and '{06940f}ON' or '{d10000}OFF') then
-						main_window_state.v = not main_window_state.v
-						imgui.Process = main_window_state.v
+						cmd_hud()
 						ShowDialog(1)
 					elseif dialogLine[list + 1] == u8:decode'> Фиксация HUDa\t' .. (InterfacePosition and '{06940f}ON' or '{d10000}OFF') then
 						InterfacePosition = not InterfacePosition
@@ -524,6 +557,44 @@ function main()
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Время успешно откалибровано", main_color)
 					elseif dialogLine[list + 1] == u8:decode'> Статистика\t'  then
 						ShowDialog(19)
+					else
+						ShowDialog(20)
+					end
+				end
+				if button == 0 then
+					ShowDialog(20)
+				end
+			end
+		end
+		local result, button, list, input = sampHasDialogRespond(1700)
+		if caption == u8:decode'MO: Список' then
+			if result then
+				if button == 1 then
+					if dialogLine[list + 1]     ==  '  1. MO LS\t' .. colorMO[1]  .. ini3[TimeMO].time1 then
+						sampSendChat(u8:decode"/f MO LS даёт в " .. ini3[TimeMO].time1)
+						ShowDialog(170)
+					elseif dialogLine[list + 1] ==  '  2. MO SF\t' .. colorMO[2]  .. ini3[TimeMO].time2 then
+						sampSendChat("/f MO SF даёт в " .. ini3[TimeMO].time2)
+						ShowDialog(170)
+					elseif dialogLine[list + 1] ==  '  3. MO LV\t' .. colorMO[3]  .. ini3[TimeMO].time3 then
+						sampSendChat("/f MO LV даёт в " .. ini3[TimeMO].time3)
+						ShowDialog(170)
+					elseif dialogLine[list + 1] ==  '> MO HUD\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF') then
+						cmd_MOhud()
+						ShowDialog(170)
+					elseif dialogLine[list + 1] == u8:decode'> Фиксация HUDa\t' .. (InterfacePositionMO and '{06940f}ON' or '{d10000}OFF') then
+						InterfacePositionMO = not InterfacePositionMO
+						inicfg.save(ini, directIni)
+						ShowDialog(170)
+					elseif dialogLine[list + 1] ==  u8:decode'> Сообщить о таймингах\t' then
+						MONotifyWait:run()
+						ShowDialog(170)
+					elseif dialogLine[list + 1] == u8:decode'> Разница во времени с Samp-RP\t'  then
+						Calibration()
+						ShowDialog(170)
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Время успешно откалибровано", main_color)
+					elseif dialogLine[list + 1] == u8:decode'> Статистика\t'  then
+						ShowDialog(171)
 					else
 						ShowDialog(20)
 					end
@@ -839,6 +910,34 @@ function main()
 				end
 			end
 		end
+		local result, button, list, input = sampHasDialogRespond(1007)
+		if caption == u8:decode"Количество ХП" then
+			if result then
+				if button == 1 then
+					if tonumber(input) == tonumber(120) or tonumber(input) == tonumber(130) or tonumber(input) == tonumber(140) or tonumber(input) == tonumber(150) or tonumber(input) == tonumber(160) then
+						ini4[GhettoMateSettings].Health = input
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Максимальное количество хп составляет: {FFFF00}" .. ini4[GhettoMateSettings].Health, main_color)
+						inicfg.save(ini4, directIni4)
+						ShowDialog(23)
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Возможные значения: {FFFF00}120, 130, 140, 150 и 160", main_color)
+						ShowDialog(23)
+					end
+				else
+					ShowDialog(23)
+				end
+			end
+		end
+		local result, button, list, input = sampHasDialogRespond(1701)
+		if caption == u8:decode"Статистика" then
+			if result then
+				if button == 1 then
+					ShowDialog(171)
+				else
+					ShowDialog(170)
+				end
+			end
+		end
 		if Find then
 			Suchen()
 		end
@@ -979,12 +1078,22 @@ end
 
 function cmd_hud(arg)
 	main_window_state.v = not main_window_state.v
-	imgui.Process = main_window_state.v
+	if not main_window_state.v and not secondary_window_state.v then
+		imgui.Process = false
+	end
+	if main_window_state.v then
+		imgui.Process = true
+	end
 end
 
 function cmd_MOhud(arg)
 	secondary_window_state.v = not secondary_window_state.v
-	imgui.Process = secondary_window_state.v
+	if not main_window_state.v and not secondary_window_state.v then
+		imgui.Process = false
+	end
+	if secondary_window_state.v then
+		imgui.Process = true
+	end
 end
 
 function imgui.ApplyCustomStyle()
@@ -1313,6 +1422,23 @@ function imgui.OnDrawFrame()
 	end
 	
 	if secondary_window_state.v then
+		if ini[GhettoMateConfig].X_MO == nil then
+			ini[GhettoMateConfig].X_MO = 0
+		end
+		if ini[GhettoMateConfig].Y_MO == nil then
+			ini[GhettoMateConfig].Y_MO = 0
+		end
+		if InterfacePositionMO == true then
+			imgui.SetNextWindowPos(imgui.ImVec2(ini[GhettoMateConfig].X_MO, ini[GhettoMateConfig].Y_MO))
+			inicfg.save(ini, directIni)
+		end
+		imgui.SetNextWindowSize(imgui.ImVec2(resX/8.5, resY/8.5))
+		imgui.Begin("MO HUD", _, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
+		local pos_MO = imgui.GetWindowPos()
+		ini[GhettoMateConfig].X_MO = pos_MO.x
+		ini[GhettoMateConfig].Y_MO = pos_MO.y
+		inicfg.save(ini, directIni)
+	
 		if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
 			colorMO[1] = "{808080}"
 		else
@@ -1341,21 +1467,18 @@ function imgui.OnDrawFrame()
 			end
 		end
 		
-		imgui.SetNextWindowPos(imgui.ImVec2(0, 4.5 / 10 * resY))
-		imgui.SetNextWindowSize(imgui.ImVec2(resX / 8.5, resY*0.08))
-		imgui.SetMouseCursor(-1)
-
-		imgui.Begin("MO HUD", _, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoMove)
-		
-		imgui.TextColoredRGB(u8"1.  MOLS")
+		imgui.TextColoredRGB(u8"1.  MO LS")
 			imgui.SameLine((resX/5) / 3)
 		imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
-		imgui.TextColoredRGB(u8"2.  MOSF")
+		imgui.TextColoredRGB(u8"2.  MO SF")
 			imgui.SameLine((resX/5) / 3)
 		imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
-		imgui.TextColoredRGB(u8"3.  MOLV")
+		imgui.TextColoredRGB(u8"3.  MO LV")
 			imgui.SameLine((resX/5) / 3)
 		imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
+		imgui.Separator()
+		imgui.TextColoredRGB(u8:decode"Материалов привезено: " .. ini2[GhettoMateMO].mats)
+		imgui.TextColoredRGB(u8:decode"Фур украдено: " .. ini2[GhettoMateMO].cars)
 		imgui.End()
 	end
 end
@@ -1390,7 +1513,21 @@ end
 
 function DrugsWaiting()
 	wait(60000)
-	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Юзай, {FFFF00}" .. my_name .. "{FFFFFF}!", main_color)
+	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Юзай, {00FF00}" .. my_name .. "{FFFFFF}!", main_color)
+end
+
+function UseDrugsWaiting(DrugsCount)
+	wait(1200)
+	sampSendChat("/usedrugs " .. DrugsCount)
+end
+
+function MONotifyWaiting()
+	wait(1200)
+	sampSendChat("/f MO LS даёт в " .. ini3[TimeMO].time1)
+	wait(1200)
+	sampSendChat("/f MO SF даёт в " .. ini3[TimeMO].time2)
+	wait(1200)
+	sampSendChat("/f MO LV даёт в " .. ini3[TimeMO].time3)
 end
 
 function Timer()
@@ -1607,12 +1744,12 @@ function TimerMO()
 				Wait2:run()
 			end
 			if totalSeconds == ini3[SecondsMO].time2 - ini4[GhettoMateSettings].TimerNotifyMO then
-				sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LS{FFFFFF} будет доступен через {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд!", main_color)
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO SF{FFFFFF} будет доступен через {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд!", main_color)
 				MOsideTimer = true
 				Wait2:run()
 			end
 			if totalSeconds == ini3[SecondsMO].time3 - ini4[GhettoMateSettings].TimerNotifyMO then
-				sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LS{FFFFFF} будет доступен через {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд!", main_color)
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LV{FFFFFF} будет доступен через {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд!", main_color)
 				MOsideTimer = true
 				Wait2:run()
 			end
@@ -1970,15 +2107,43 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 			color[16] = "{06940f}"
 		end
 	end
+		if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
+			colorMO[1] = "{808080}"
+		else
+			if timerMO[1] == 1 then
+				colorMO[1] = "{d10000}"
+			else
+				colorMO[1] = "{06940f}"
+			end
+		end
+		if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
+			colorMO[2] = "{808080}"
+		else
+			if timerMO[2] == 1 then
+				colorMO[2] = "{d10000}"
+			else
+				colorMO[2] = "{06940f}"
+			end
+		end
+		if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
+			colorMO[3] = "{808080}"
+		else
+			if timerMO[3] == 1 then
+				colorMO[3] = "{d10000}"
+			else
+				colorMO[3] = "{06940f}"
+			end
+		end
 	
 	if int == 20 then 
 		dialogLine, dialogTextToList = {}, {}
 		dialogLine[#dialogLine + 1] = '  1. Larek\t'
-		dialogLine[#dialogLine + 1] = '  2. MO\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  2. MO\t'
 		dialogLine[#dialogLine + 1] = '  3. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = '  4. Find\t' .. (Find and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = '  5. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'> Настройки\t'
+		dialogLine[#dialogLine + 1] = u8:decode'> Помощь\t'
 		
 		local text = ""
 		for k,v in pairs(dialogLine) do
@@ -2003,11 +2168,12 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = u8:decode'  4. Анимация угона\t' .. (ini4[GhettoMateSettings].AnimUgonyala and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'  5. Выбрать анимацию угона\t' .. ini4[GhettoMateSettings].IdAnimUgonyala
 		dialogLine[#dialogLine + 1] = u8:decode'  6. Уведомления от Find\t' .. (ini4[GhettoMateSettings].NotifyFind and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  7. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  8. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  9. Уведомления от MO\t' .. (ini4[GhettoMateSettings].TimerNotifyMO and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode' 10. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO
-		dialogLine[#dialogLine + 1] = ' 11. ' .. (script.update and u8:decode'{d10000}[GhettoMate] Версия устарела' or u8:decode'{06940f}[GhettoMate] Актуальная версия')
+		dialogLine[#dialogLine + 1] = u8:decode'  7. Максимальное количество ХП\t' .. ini4[GhettoMateSettings].Health
+		dialogLine[#dialogLine + 1] = u8:decode'  8. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode'  9. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode' 10. Уведомления от MO\t' .. (ini4[GhettoMateSettings].TimerNotifyMO and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode' 11. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO
+		dialogLine[#dialogLine + 1] = ' 12. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия')
 		
 		local text3 = ""
 		for k,v in pairs(dialogLine) do
@@ -2025,6 +2191,10 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 	
 	if int == 26 then
 		sampShowDialog(1006, u8:decode"Таймер", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
+	end
+	
+	if int == 27 then
+		sampShowDialog(1007, u8:decode"Количество ХП", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
 	end
 		
 	if int == 1 then
@@ -2045,7 +2215,7 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = ' 14. ' .. ini[GhettoMateName].Name14 .. '\t' .. color[14] .. ini3[GhettoMateTime].time14
 		dialogLine[#dialogLine + 1] = ' 15. ' .. ini[GhettoMateName].Name15 .. '\t' .. color[15] .. ini3[GhettoMateTime].time15
 		dialogLine[#dialogLine + 1] = ' 16. ' .. ini[GhettoMateName].Name16 .. '\t' .. color[16] .. ini3[GhettoMateTime].time16
-		dialogLine[#dialogLine + 1] = u8:decode'> Larek HUD\t' .. (interface and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode'> Larek HUD\t' .. (main_window_state.v and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'> Фиксация HUDa\t' .. (InterfacePosition and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'> Разница во времени с Samp-RP\t'
 		dialogLine[#dialogLine + 1] = u8:decode'> Статистика\t'
@@ -2109,6 +2279,30 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		ini2 = inicfg.load(GhettoMateMoney, directIni2)
 		sampShowDialog(1506, u8:decode'Статистика', u8:decode"Денег награблено: \t" .. ini2[GhettoMateMoney].money .. u8:decode"\nМагазинов ограблено: \t" .. ini2[GhettoMateMoney].count
 		.. u8:decode"\nОграблений в 2: \t" .. ini2[GhettoMateMoney].count2 .. u8:decode"\nОграблений в 3: \t" .. ini2[GhettoMateMoney].count3 .. u8:decode"\nОграблений в 4: \t" .. ini2[GhettoMateMoney].count4 .. u8:decode"\nОграблений в 1: \t" .. ini2[GhettoMateMoney].count1, u8:decode"Выбрать", u8:decode"Выход", 4)
+	end
+	
+	if int == 170 then
+		dialogLine, dialogTextToList = {}, {}
+		dialogLine[#dialogLine + 1] = '  1. MO LS\t' .. colorMO[1]  .. ini3[TimeMO].time1
+		dialogLine[#dialogLine + 1] = '  2. MO SF\t' .. colorMO[2]  .. ini3[TimeMO].time2
+		dialogLine[#dialogLine + 1] = '  3. MO LV\t' .. colorMO[3]  .. ini3[TimeMO].time3
+		dialogLine[#dialogLine + 1] = '> MO HUD\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode'> Фиксация HUDa\t' .. (InterfacePositionMO and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode'> Сообщить о таймингах\t'
+		dialogLine[#dialogLine + 1] = u8:decode'> Разница во времени с Samp-RP\t'
+		dialogLine[#dialogLine + 1] = u8:decode'> Статистика\t'
+
+		local text4 = ""
+		for k,v in pairs(dialogLine) do
+			text4 = text4..v.."\n"
+		end
+		sampShowDialog(1700, u8:decode'MO: Список', text4, u8:decode"Выбрать", u8:decode"Назад", 4)
+	end
+	
+	if int == 171 then
+		GhettoMateMO = string.format('GhettoMateMO-%s', my_name)
+		ini2 = inicfg.load(GhettoMateMO, directIni2)
+		sampShowDialog(1701, u8:decode'Статистика', u8:decode"Материалов привезено: \t" .. ini2[GhettoMateMO].mats .. u8:decode"\nФур украдено: \t" .. ini2[GhettoMateMO].cars, u8:decode"Выбрать", u8:decode"Выход", 4)
 	end
 end
 
@@ -2503,6 +2697,12 @@ function sampev.onServerMessage(color, text)
 			inicfg.save(ini3, directIni3)
 		end
 	end
+	if string.find(text, string.format(u8:decode" %s разгрузил(а) на склад", my_name), 1, true) then
+		matss = string.match(text, u8:decode"(%d+)")
+		ini2[GhettoMateMO].mats = ini2[GhettoMateMO].mats + matss
+		ini2[GhettoMateMO].cars = ini2[GhettoMateMO].cars + 1
+		inicfg.save(ini2, directIni2)
+	end
 	
 	-- AUTOGETGUNS--
 	
@@ -2565,12 +2765,15 @@ function sampev.onServerMessage(color, text)
 			DrugsWait:run()
 		end
 	end
+	if string.find(text, u8:decode"Недостаточно наркотиков") and DrugsCount > 0 then
+		DrugsCount = DrugsCount - 1
+		UseDrugsWait:run(DrugsCount)
+	end
 end
 
 function sampev.onDisplayGameText(style, time, text)
 	if Magaz1 or Magaz2 or Magaz3 or Magaz4 or Magaz5 or Magaz6 or Magaz7 or Magaz8 or Magaz9 or Magaz10 or Magaz11 or Magaz12 or Magaz13 or Magaz14 or Magaz15 or Magaz16 then 
 		if string.find(text, "$5000") then
-			sampAddChatMessage("+5000", -1)
 			ini2[GhettoMateMoney].money  = ini2[GhettoMateMoney].money + 5000
 			ini2[GhettoMateMoney].count  = ini2[GhettoMateMoney].count + 1
 			ini2[GhettoMateMoney].count2 = ini2[GhettoMateMoney].count2 + 1
@@ -2693,6 +2896,8 @@ function Suchen()
 					TargetDead = true
 					Find = false
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} ликвидирована!", main_color)
+					deleteCheckpoint(checkpoint)
+					removeBlip(blip)
 				end
 			end
 			local posX, posY, posZ = getCharCoordinates(ped)
@@ -2716,8 +2921,6 @@ function Suchen()
 				WasFound = true
 			end
 		else
-			deleteCheckpoint(checkpoint)
-			removeBlip(blip)
 			if NotFound == false and WasFound == false then
 				if ini4[GhettoMateSettings].NotifyFind then
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} не обнаружена!", main_color)
@@ -2736,6 +2939,8 @@ function Suchen()
 	else
 		Find = false
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} вышла с сервера!", main_color)
+		deleteCheckpoint(checkpoint)
+		removeBlip(blip)
 	end
 end
 
@@ -2818,52 +3023,243 @@ function sampev.onSendCommand(cmd)
 	
 	if args[1] == '/l' then
 		if args[2] == '1' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name1)
+			if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name1)
+			else
+				if ini3[GhettoMateSeconds].time1 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name1 .. " [" .. ini3[GhettoMateTime].time1 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name1 .. " [" .. ini3[GhettoMateTime].time1 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '2' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name2)
+			if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name2)
+			else
+				if ini3[GhettoMateSeconds].time2 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name2 .. " [" .. ini3[GhettoMateTime].time2 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name2 .. " [" .. ini3[GhettoMateTime].time2 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '3' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name3)
+			if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name3)
+			else
+				if ini3[GhettoMateSeconds].time3 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name3 .. " [" .. ini3[GhettoMateTime].time3 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name3 .. " [" .. ini3[GhettoMateTime].time3 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '4' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name4)
+			if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name4)
+			else
+				if ini3[GhettoMateSeconds].time4 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name4 .. " [" .. ini3[GhettoMateTime].time4 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name4 .. " [" .. ini3[GhettoMateTime].time4 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '5' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name5)
+			if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name5)
+			else
+				if ini3[GhettoMateSeconds].time5 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name5 .. " [" .. ini3[GhettoMateTime].time5 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name5 .. " [" .. ini3[GhettoMateTime].time5 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '6' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name6)
+			if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name6)
+			else
+				if ini3[GhettoMateSeconds].time6 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name6 .. " [" .. ini3[GhettoMateTime].time6 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name6 .. " [" .. ini3[GhettoMateTime].time6 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '7' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name7)
+			if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name7)
+			else
+				if ini3[GhettoMateSeconds].time7 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name7 .. " [" .. ini3[GhettoMateTime].time7 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name7 .. " [" .. ini3[GhettoMateTime].time7 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '8' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name8)
+			if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name8)
+			else
+				if ini3[GhettoMateSeconds].time8 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name8 .. " [" .. ini3[GhettoMateTime].time8 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name8 .. " [" .. ini3[GhettoMateTime].time8 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '9' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name9)
+			if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name9)
+			else
+				if ini3[GhettoMateSeconds].time9 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name9 .. " [" .. ini3[GhettoMateTime].time9 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name9 .. " [" .. ini3[GhettoMateTime].time9 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '10' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name10)
+			if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name10)
+			else
+				if ini3[GhettoMateSeconds].time10 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name10 .. " [" .. ini3[GhettoMateTime].time10 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name10 .. " [" .. ini3[GhettoMateTime].time10 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '11' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name11)
+			if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name11)
+			else
+				if ini3[GhettoMateSeconds].time11 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name11 .. " [" .. ini3[GhettoMateTime].time11 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name11 .. " [" .. ini3[GhettoMateTime].time11 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '12' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name12)
+			if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name12)
+			else
+				if ini3[GhettoMateSeconds].time12 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name12 .. " [" .. ini3[GhettoMateTime].time12 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name12 .. " [" .. ini3[GhettoMateTime].time12 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '13' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name13)
+			if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name13)
+			else
+				if ini3[GhettoMateSeconds].time13 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name13 .. " [" .. ini3[GhettoMateTime].time13 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name13 .. " [" .. ini3[GhettoMateTime].time13 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '14' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name14)
+			if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name14)
+			else
+				if ini3[GhettoMateSeconds].time14 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name14 .. " [" .. ini3[GhettoMateTime].time14 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name14 .. " [" .. ini3[GhettoMateTime].time14 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '15' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name15)
+			if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name15)
+			else
+				if ini3[GhettoMateSeconds].time15 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name15 .. " [" .. ini3[GhettoMateTime].time15 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name15 .. " [" .. ini3[GhettoMateTime].time15 .. u8:decode" - Можно]")
+				end
+			end
 		end
 		if args[2] == '16' then
-			sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name16)
+			if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name16)
+			else
+				if ini3[GhettoMateSeconds].time16 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name16 .. " [" .. ini3[GhettoMateTime].time16 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name16 .. " [" .. ini3[GhettoMateTime].time16 .. u8:decode" - Можно]")
+				end
+			end
+		end
+	end
+	
+	if args[1] == '/mo' then 
+		if args[2] == 'ls' then
+			if ini3[TimeMO].time1 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в MO LS")
+			else
+				if ini3[SecondsMO].time1 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в MO LS" .. " [" .. ini3[TimeMO].time1 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в MO LS" .. " [" .. ini3[TimeMO].time1 .. u8:decode" - Можно]")
+				end
+			end
+		end
+		if args[2] == 'sf' then
+			if ini3[TimeMO].time2 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в MO SF")
+			else
+				if ini3[SecondsMO].time2 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в MO SF" .. " [" .. ini3[TimeMO].time2 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в MO SF" .. " [" .. ini3[TimeMO].time2 .. u8:decode" - Можно]")
+				end
+			end
+		end
+		if args[2] == 'lv' then
+			if ini3[TimeMO].time3 == u8:decode"Неизвестно" then 
+				sampSendChat(u8:decode"Нам нужно ехать в MO LV")
+			else
+				if ini3[SecondsMO].time3 - totalSeconds > 0 then
+					sampSendChat(u8:decode"Нам нужно ехать в MO LV" .. " [" .. ini3[TimeMO].time3 .. u8:decode" - Нельзя]")
+				else
+					sampSendChat(u8:decode"Нам нужно ехать в MO LV" .. " [" .. ini3[TimeMO].time3 .. u8:decode" - Можно]")
+				end
+			end
+		end
+	end
+	
+	if args[1] == '/drugs' then
+		player_health = getCharHealth(PLAYER_PED)
+		if player_health < ini4[GhettoMateSettings].Health then
+			DrugsCount = math.ceil((ini4[GhettoMateSettings].Health - player_health) / 10)
+			if ini4[GhettoMateSettings].Health == 120 then
+				if DrugsCount >= 4 then DrugsCount = 3 end
+				sampSendChat("/usedrugs " .. DrugsCount)
+			end
+			if ini4[GhettoMateSettings].Health == 130 then
+				if DrugsCount >= 7 then DrugsCount = 6 end
+				sampSendChat("/usedrugs " .. DrugsCount)
+			end
+			if ini4[GhettoMateSettings].Health == 140 then
+				if DrugsCount >= 10 then DrugsCount = 9 end
+				sampSendChat("/usedrugs " .. DrugsCount)
+			end
+			if ini4[GhettoMateSettings].Health == 150 then
+				if DrugsCount >= 13 then DrugsCount = 12 end
+				sampSendChat("/usedrugs " .. DrugsCount)
+			end
+			if ini4[GhettoMateSettings].Health == 160 then
+				if DrugsCount >= 16 then DrugsCount = 15 end
+				sampSendChat("/usedrugs " .. DrugsCount)
+			end
 		end
 	end
 end
