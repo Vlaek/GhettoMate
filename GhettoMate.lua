@@ -1,11 +1,13 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('03/07/2020')
-script_version_number(6)
+script_version_number(7)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
 local sampev, inicfg, imgui, encoding, keys = require 'lib.samp.events', require 'inicfg', require 'imgui', require 'encoding', require "vkeys"
+local as_action = require 'moonloader'.audiostream_state
+
 require "reload_all"
 require "lib.sampfuncs"
 require "lib.moonloader"
@@ -160,6 +162,7 @@ function main()
 	sampRegisterChatCommand("lhud", cmd_hud)
 	sampRegisterChatCommand("mohud", cmd_MOhud)
 	sampRegisterChatCommand("gfind", cmd_sucher)
+	sampRegisterChatCommand("drugs", cmd_usedrugs)
 	sampRegisterChatCommand('GhettoMate', function()
 		ShowDialog(20)
 	end)
@@ -182,6 +185,12 @@ function main()
 	AdressGhettoMate = string.format("%s\\moonloader\\config\\GhettoMate", getGameDirectory())
 	if not doesDirectoryExist(AdressConfig) then createDirectory(AdressConfig) end
 	if not doesDirectoryExist(AdressGhettoMate) then createDirectory(AdressGhettoMate) end
+	
+	soundManager.loadSound("message_sms")
+	soundManager.loadSound("message_news")
+	soundManager.loadSound("message_tip")
+	soundManager.loadSound("message_alarm")
+	soundManager.loadSound("message_sos")
 	
 	GhettoMateName = string.format('GhettoMateName')
 	if ini[GhettoMateName] == nil then
@@ -337,7 +346,8 @@ function main()
 				NotifyAutoGetGuns=true,
 				TimerNotifyMO=tonumber(15),
 				NotifyMO=true,
-				Health=120
+				Health=120,
+				Sounds=false
 			}
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
@@ -396,6 +406,10 @@ function main()
 		
 		if isKeyJustPressed(VK_MULTIPLY) then
 			cmd_autogetguns()
+		end
+		
+		if isKeyJustPressed(VK_ADD) then
+			cmd_usedrugs()
 		end
 		
 		local caption = sampGetDialogCaption()
@@ -487,10 +501,15 @@ function main()
 					elseif dialogLine[list + 1] ==  u8:decode' 10. Уведомления от MO\t' .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF') then
 						ini4[GhettoMateSettings].NotifyMO = not ini4[GhettoMateSettings].NotifyMO
 						inicfg.save(ini4, directIni4)
+						ShowDialog(23)
 					elseif dialogLine[list + 1] ==  u8:decode' 11. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO then
 						ShowDialog(26)
 						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] == ' 12. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия') then
+					elseif dialogLine[list + 1] ==  u8:decode' 12. Звуки\t' .. (ini4[GhettoMateSettings].Sounds and '{06940f}ON' or '{d10000}OFF') then
+						ini4[GhettoMateSettings].Sounds = not ini4[GhettoMateSettings].Sounds
+						ShowDialog(23)
+						inicfg.save(ini4, directIni4)
+					elseif dialogLine[list + 1] == ' 13. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия') then
 						if script.update then
 							imgui.Process = false
 							update()
@@ -983,6 +1002,9 @@ function main()
 													else
 														sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
 													end
+													if ini4[GhettoMateSettings].Sounds then
+														soundManager.playSound("message_tip")
+													end
 													spam = false
 												end
 											end
@@ -1012,6 +1034,9 @@ function main()
 											else
 												sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Новый транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
 											end
+											if ini4[GhettoMateSettings].Sounds then
+												soundManager.playSound("message_tip")
+											end
 											spam = false
 										end
 									end
@@ -1038,6 +1063,9 @@ function main()
 														sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
 													else
 														sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
+													end
+													if ini4[GhettoMateSettings].Sounds then
+														soundManager.playSound("message_tip")
 													end
 													spam = false
 												end
@@ -1069,6 +1097,9 @@ function main()
 				elseif sound then
 					if ini4[GhettoMateSettings].NotifyUgonyala then
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Угон снова доступен", main_color)
+					if ini4[GhettoMateSettings].Sounds then
+						soundManager.playSound("message_tip")
+					end
 					sound = false
 				end
 			end
@@ -1514,6 +1545,9 @@ end
 function DrugsWaiting()
 	wait(60000)
 	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Юзай, {00FF00}" .. my_name .. "{FFFFFF}!", main_color)
+	if ini4[GhettoMateSettings].Sounds then
+		soundManager.playSound("message_news")
+	end
 end
 
 function UseDrugsWaiting(DrugsCount)
@@ -2171,9 +2205,10 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = u8:decode'  7. Максимальное количество ХП\t' .. ini4[GhettoMateSettings].Health
 		dialogLine[#dialogLine + 1] = u8:decode'  8. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode'  9. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode' 10. Уведомления от MO\t' .. (ini4[GhettoMateSettings].TimerNotifyMO and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = u8:decode' 10. Уведомления от MO\t'  .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode' 11. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO
-		dialogLine[#dialogLine + 1] = ' 12. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия')
+		dialogLine[#dialogLine + 1] = u8:decode' 12. Звуки\t' .. (ini4[GhettoMateSettings].Sounds and '{06940f}ON' or '{d10000}OFF')				
+		dialogLine[#dialogLine + 1] = ' 13. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия')
 		
 		local text3 = ""
 		for k,v in pairs(dialogLine) do
@@ -2309,66 +2344,114 @@ end
 function MagazTimeFunction()
 	if MagazTime[1] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name1 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[1] = false
 	end
 	if MagazTime[2] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name2 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[2] = false
 	end
 	if MagazTime[3] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name3 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[3] = false
 	end
 	if MagazTime[4] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name4 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[4] = false
 	end
 	if MagazTime[5] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name5 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[5] = false
 	end
 	if MagazTime[6] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name6 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[6] = false
 	end
 	if MagazTime[7] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name7 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[7] = false
 	end
 	if MagazTime[8] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name8 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[8] = false
 	end
 	if MagazTime[9] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name9 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[9] = false
 	end
 	if MagazTime[10] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name10 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[10] = false
 	end
 	if MagazTime[11] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name11 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[11] = false
 	end
 	if MagazTime[12] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name12 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[12] = false
 	end
 	if MagazTime[13] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name13 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[13] = false
 	end
 	if MagazTime[14] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name14 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[14] = false
 	end
 	if MagazTime[15] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name15 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[15] = false
 	end
 	if MagazTime[16] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ларёк{FFFF00} " .. ini[GhettoMateName].Name16 .. u8:decode" {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MagazTime[16] = false
 	end
 end
@@ -2376,14 +2459,23 @@ end
 function MOTimeFunction()
 	if MOTime[1] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LS  {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MOTime[1] = false
 	end
 	if MOTime[2] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO SF  {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MOTime[2] = false
 	end
 	if MOTime[3] == true then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}MO LV  {FFFFFF}снова доступен для ограбления!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_news")
+		end
 		MOTime[3] = false
 	end
 end
@@ -2871,18 +2963,27 @@ function cmd_sucher(arg)
 		if tonumber(arg) == tonumber(my_id) then
 			if ini4[GhettoMateSettings].NotifyFind then
 				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Не имеет смысла", main_color)
+				if ini4[GhettoMateSettings].Sounds then
+					soundManager.playSound("message_sms")
+				end
 			end
 			Find = false
 		end
 		if not Find then
 			if ini4[GhettoMateSettings].NotifyFind then
 				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Поиск прекращен", main_color)
+				if ini4[GhettoMateSettings].Sounds then
+					soundManager.playSound("message_sms")
+				end
 			end
 			deleteCheckpoint(checkpoint)
 			removeBlip(blip)
 		end
 	else
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Игрок не на сервере", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_sms")
+		end
 		Find = false
 	end
 end
@@ -2896,6 +2997,9 @@ function Suchen()
 					TargetDead = true
 					Find = false
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} ликвидирована!", main_color)
+					if ini4[GhettoMateSettings].Sounds then
+						soundManager.playSound("message_sms")
+					end
 					deleteCheckpoint(checkpoint)
 					removeBlip(blip)
 				end
@@ -2915,6 +3019,9 @@ function Suchen()
 					else
 						sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Цель{FF0000} %s {FFFFFF}обнаружена! {FF0000}%s {DCDCDC}%s{FFFFFF} ", playerNickname, health, armor), main_color)
 					end
+					if ini4[GhettoMateSettings].Sounds then
+						soundManager.playSound("message_sms")
+					end
 				end
 				Found = true
 				NotFound = false
@@ -2924,6 +3031,9 @@ function Suchen()
 			if NotFound == false and WasFound == false then
 				if ini4[GhettoMateSettings].NotifyFind then
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} не обнаружена!", main_color)
+					if ini4[GhettoMateSettings].Sounds then
+						soundManager.playSound("message_sms")
+					end
 				end
 				NotFound = true
 				Found = false
@@ -2931,6 +3041,9 @@ function Suchen()
 			if NotFound == false and WasFound == true then
 				if ini4[GhettoMateSettings].NotifyFind then
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} пропала!", main_color)
+					if ini4[GhettoMateSettings].Sounds then
+						soundManager.playSound("message_sms")
+					end
 				end
 				NotFound = true
 				Found = false
@@ -2939,6 +3052,9 @@ function Suchen()
 	else
 		Find = false
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Цель {FF0000}" .. playerNickname .. u8:decode"{FFFFFF} вышла с сервера!", main_color)
+		if ini4[GhettoMateSettings].Sounds then
+			soundManager.playSound("message_sms")
+		end
 		deleteCheckpoint(checkpoint)
 		removeBlip(blip)
 	end
@@ -2973,6 +3089,9 @@ function sampev.onSendCommand(cmd)
 			if found then
 				if ini4[GhettoMateSettings].NotifyUgonyala then
 					sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {FF0000}\"%s\" {FFFFFF}активирован",carname), main_color)
+					if ini4[GhettoMateSettings].Sounds then
+						soundManager.playSound("message_tip")
+					end
 				end
 				search = true
 				removeMarks()
@@ -3012,6 +3131,9 @@ function sampev.onSendCommand(cmd)
 			else
 				if ini4[GhettoMateSettings].NotifyUgonyala then
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Угон доступен", main_color)
+					if ini4[GhettoMateSettings].Sounds then
+						soundManager.playSound("message_tip")
+					end
 				end
 			end
 		end
@@ -3235,32 +3357,33 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 	end
-	
-	if args[1] == '/drugs' then
-		player_health = getCharHealth(PLAYER_PED)
-		if player_health < ini4[GhettoMateSettings].Health then
-			DrugsCount = math.ceil((ini4[GhettoMateSettings].Health - player_health) / 10)
-			if ini4[GhettoMateSettings].Health == 120 then
-				if DrugsCount >= 4 then DrugsCount = 3 end
-				sampSendChat("/usedrugs " .. DrugsCount)
-			end
-			if ini4[GhettoMateSettings].Health == 130 then
-				if DrugsCount >= 7 then DrugsCount = 6 end
-				sampSendChat("/usedrugs " .. DrugsCount)
-			end
-			if ini4[GhettoMateSettings].Health == 140 then
-				if DrugsCount >= 10 then DrugsCount = 9 end
-				sampSendChat("/usedrugs " .. DrugsCount)
-			end
-			if ini4[GhettoMateSettings].Health == 150 then
-				if DrugsCount >= 13 then DrugsCount = 12 end
-				sampSendChat("/usedrugs " .. DrugsCount)
-			end
-			if ini4[GhettoMateSettings].Health == 160 then
-				if DrugsCount >= 16 then DrugsCount = 15 end
-				sampSendChat("/usedrugs " .. DrugsCount)
-			end
+end
+
+function cmd_usedrugs()
+	player_health = getCharHealth(PLAYER_PED)
+	if player_health < ini4[GhettoMateSettings].Health then
+		DrugsCount = math.ceil((ini4[GhettoMateSettings].Health - player_health) / 10)
+		if ini4[GhettoMateSettings].Health == 120 then
+			if DrugsCount >= 4 then DrugsCount = 3 end
+			sampSendChat("/usedrugs " .. DrugsCount)
 		end
+		if ini4[GhettoMateSettings].Health == 130 then
+			if DrugsCount >= 7 then DrugsCount = 6 end
+			sampSendChat("/usedrugs " .. DrugsCount)
+		end
+		if ini4[GhettoMateSettings].Health == 140 then
+			if DrugsCount >= 10 then DrugsCount = 9 end
+			sampSendChat("/usedrugs " .. DrugsCount)
+		end
+		if ini4[GhettoMateSettings].Health == 150 then
+			if DrugsCount >= 13 then DrugsCount = 12 end
+			sampSendChat("/usedrugs " .. DrugsCount)
+		end
+		if ini4[GhettoMateSettings].Health == 160 then
+			if DrugsCount >= 16 then DrugsCount = 15 end
+			sampSendChat("/usedrugs " .. DrugsCount)
+		end
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Было использовано {FFFF00}" .. DrugsCount .. u8:decode" {FFFFFF}нарко", main_color)
 	end
 end
 
@@ -3269,6 +3392,9 @@ function stopSearch()
 	if search then
 		if ini4[GhettoMateSettings].NotifyUgonyala then
 			sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {FF0000}\"%s\"{FFFFFF} прекращен", carname), main_color)
+			if ini4[GhettoMateSettings].Sounds then
+				soundManager.playSound("message_tip")
+			end
 			spam = true
 		end
 		search = false
@@ -3286,3 +3412,21 @@ function removeMarks()
 	removeBlip(mark)
 	deleteCheckpoint(ugcheckpoint)
 end
+
+soundManager = {}
+soundManager.soundsList = {}
+
+function soundManager.loadSound(soundName)
+	soundManager.soundsList[soundName] = loadAudioStream(getWorkingDirectory()..'\\rsc\\'..soundName..'.mp3')
+end
+
+function soundManager.playSound(soundName)
+	if soundManager.soundsList[soundName] then
+		setAudioStreamVolume(soundManager.soundsList[soundName], 50/100)
+		setAudioStreamState(soundManager.soundsList[soundName], as_action.PLAY)
+	end
+end
+
+	--if ini4[GhettoMateSettings].Sounds then
+	--	soundManager.playSound("message_news")
+	--end
