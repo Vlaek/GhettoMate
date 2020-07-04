@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('03/07/2020')
-script_version_number(8.2)
+script_version_number(9)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -428,6 +428,31 @@ function main()
 		inicfg.save(ini2, directIni2)
 	end
 	
+	GhettoMateCapture = string.format('GhettoMateCapture-%s', my_name)
+	if ini2[GhettoMateCapture] == nil then
+		ini2 = inicfg.load({
+			[GhettoMateCapture] = {
+				kill  = tonumber(0),
+				death  = tonumber(0),
+				grove_kill  = tonumber(0),
+				ballas_kill  = tonumber(0),
+				aztecas_kill  = tonumber(0),
+				vagos_kill = tonumber(0),
+				rifa_kill = tonumber(0),
+				gun_fist = tonumber(0),
+				gun_m4 = tonumber(0),
+				gun_deagle = tonumber(0),
+				gun_ak47 = tonumber(0),
+				gun_sdpistol = tonumber(0),
+				gun_shotgun = tonumber(0),
+				gun_rifle = tonumber(0),
+				gun_bat = tonumber(0),
+				gun_ost = tonumber(0)
+			}
+		}, directIni2)
+		inicfg.save(ini2, directIni2)
+	end
+	
 	GhettoMateTime = string.format('GhettoMateTime-Server-%s', server)
 	if ini3[GhettoMateTime] == nil then
 		ini3 = inicfg.load({
@@ -517,7 +542,8 @@ function main()
 				TimerNotifyMO=tonumber(15),
 				NotifyMO=true,
 				Health=120,
-				Sounds=false
+				Sounds=false,
+				NotifyCapture=true
 			}
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
@@ -611,6 +637,8 @@ function main()
 					else
 						ShowDialog(22)
 					end
+				elseif dialogLine[list + 1] ==  u8:decode'  6. Capture\t' then
+					ShowDialog(172)
 				elseif dialogLine[list + 1] ==  u8:decode'> Настройки\t' then
 					ShowDialog(23)
 				elseif dialogLine[list + 1] ==  u8:decode'> Помощь\t' then
@@ -679,7 +707,11 @@ function main()
 						ini4[GhettoMateSettings].Sounds = not ini4[GhettoMateSettings].Sounds
 						ShowDialog(23)
 						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] == ' 13. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия') then
+					elseif dialogLine[list + 1] ==  u8:decode' 13. Уведомления от Capture\t' .. (ini4[GhettoMateSettings].NotifyCapture and '{06940f}ON' or '{d10000}OFF') then
+						ini4[GhettoMateSettings].NotifyCapture = not ini4[GhettoMateSettings].NotifyCapture
+						ShowDialog(23)
+						inicfg.save(ini4, directIni4)
+					elseif dialogLine[list + 1] == ' 14. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия') then
 						if script.update then
 							imgui.Process = false
 							update()
@@ -1148,6 +1180,16 @@ function main()
 					ShowDialog(171)
 				else
 					ShowDialog(170)
+				end
+			end
+		end
+		local result, button, list, input = sampHasDialogRespond(1702)
+		if caption == u8:decode"Статистика" then
+			if result then
+				if button == 1 then
+					ShowDialog(172)
+				else
+					ShowDialog(20)
 				end
 			end
 		end
@@ -2388,6 +2430,7 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = '  3. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = '  4. Find\t' .. (Find and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = '  5. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = '  6. Capture\t'
 		dialogLine[#dialogLine + 1] = u8:decode'> Настройки\t'
 		dialogLine[#dialogLine + 1] = u8:decode'> Помощь\t'
 		
@@ -2419,8 +2462,9 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		dialogLine[#dialogLine + 1] = u8:decode'  9. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode' 10. Уведомления от MO\t'  .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF')
 		dialogLine[#dialogLine + 1] = u8:decode' 11. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO
-		dialogLine[#dialogLine + 1] = u8:decode' 12. Звуки\t' .. (ini4[GhettoMateSettings].Sounds and '{06940f}ON' or '{d10000}OFF')				
-		dialogLine[#dialogLine + 1] = ' 13. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия')
+		dialogLine[#dialogLine + 1] = u8:decode' 12. Звуки\t' .. (ini4[GhettoMateSettings].Sounds and '{06940f}ON' or '{d10000}OFF')	
+		dialogLine[#dialogLine + 1] = u8:decode' 13. Уведомления от Capture\t'  .. (ini4[GhettoMateSettings].NotifyCapture and '{06940f}ON' or '{d10000}OFF')
+		dialogLine[#dialogLine + 1] = ' 14. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия')
 		
 		local text3 = ""
 		for k,v in pairs(dialogLine) do
@@ -2550,6 +2594,11 @@ function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
 		GhettoMateMO = string.format('GhettoMateMO-%s', my_name)
 		ini2 = inicfg.load(GhettoMateMO, directIni2)
 		sampShowDialog(1701, u8:decode'Статистика', u8:decode"Материалов привезено: \t" .. ini2[GhettoMateMO].mats .. u8:decode"\nФур украдено: \t" .. ini2[GhettoMateMO].cars, u8:decode"Выбрать", u8:decode"Выход", 4)
+	end
+	if int == 172 then
+		GhettoMateCapture = string.format('GhettoMateCapture-%s', my_name)
+		ini2 = inicfg.load(GhettoMateCapture, directIni2)
+		sampShowDialog(1702, u8:decode'Статистика', u8:decode"Убийств: \t" .. ini2[GhettoMateCapture].kill .. u8:decode"\nСмертей: \t" .. ini2[GhettoMateCapture].death .. u8:decode"\nКД: \t" .. math.floor(ini2[GhettoMateCapture].kill / ini2[GhettoMateCapture].death*100)/100 .. u8:decode"\nGrove убито: \t" .. ini2[GhettoMateCapture].grove_kill .. u8:decode"\nAztecas убито: \t" .. ini2[GhettoMateCapture].aztecas_kill .. u8:decode"\nBallas убито: \t" .. ini2[GhettoMateCapture].ballas_kill .. u8:decode"\nVagos убито: \t" .. ini2[GhettoMateCapture].vagos_kill .. u8:decode"\nRifa убито: \t" .. ini2[GhettoMateCapture].rifa_kill .. u8:decode"\nУбийств с Deagle: \t" .. ini2[GhettoMateCapture].gun_deagle .. u8:decode"\nУбийств с M4: \t" .. ini2[GhettoMateCapture].gun_m4  .. u8:decode"\nУбийств с Rifle: \t" .. ini2[GhettoMateCapture].gun_rifle .. u8:decode"\nУбийств с Shotgun: \t" .. ini2[GhettoMateCapture].gun_shotgun .. u8:decode"\nУбийств с SDpistol: \t" .. ini2[GhettoMateCapture].gun_sdpistol .. u8:decode"\nУбийств с кулака: \t" .. ini2[GhettoMateCapture].gun_fist .. u8:decode"\nУбийств с бейсбольной биты: \t" .. ini2[GhettoMateCapture].gun_bat .. u8:decode"\nУбийств с остального оружия: \t" .. ini2[GhettoMateCapture].gun_ost, u8:decode"Выбрать", u8:decode"Выход", 4)
 	end
 end
 
@@ -3277,7 +3326,7 @@ function Suchen()
 	end
 end
 
---UGONYALA--
+--UGONYALA by 21se--
 
 function sampev.onSendCommand(cmd)
 	local args = {}
@@ -3685,6 +3734,130 @@ function sampev.onCreateGangZone(zoneId, squareStart, squareEnd, color) --by Ser
 	end
 end
 
-function HexColor(color) --by Serhiy_Rubin
-	return ("%06x"):format(bit.band(color, 0xFFFFFF))
+function HexColor(CaptureColor) --by Serhiy_Rubin
+	return ("%06x"):format(bit.band(CaptureColor, 0xFFFFFF))
 end
+
+function sampev.onPlayerDeathNotification(playerId, killerId, reason)
+	if my_id == playerId then
+		if reason == 0 then
+			ini2[GhettoMateCapture].gun_fist = ini2[GhettoMateCapture].gun_fist + 1
+		end
+		if reason == 31 then
+			ini2[GhettoMateCapture].gun_m4 = ini2[GhettoMateCapture].gun_m4 + 1
+		end
+		if reason == 24 then
+			ini2[GhettoMateCapture].gun_deagle = ini2[GhettoMateCapture].gun_deagle + 1
+		end
+		if reason == 30 then
+			ini2[GhettoMateCapture].gun_ak47 = ini2[GhettoMateCapture].gun_ak47 + 1
+		end
+		if reason == 23 then
+			ini2[GhettoMateCapture].gun_sdpistol = ini2[GhettoMateCapture].gun_sdpistol + 1
+		end
+		if reason == 25 then
+			ini2[GhettoMateCapture].gun_shotgun = ini2[GhettoMateCapture].gun_shotgun + 1
+		end
+		if reason == 33 then
+			ini2[GhettoMateCapture].gun_rifle = ini2[GhettoMateCapture].gun_rifle + 1
+		end
+		if reason == 5 then
+			ini2[GhettoMateCapture].gun_bat = ini2[GhettoMateCapture].gun_bat + 1
+		end
+		if reason ~= 0 and reason ~= 31 and reason ~= 24 and reason ~= 30 and reason ~= 23 and reason ~= 25 and reason ~= 33 and reason ~= 5 then
+			ini2[GhettoMateCapture].gun_ost = ini2[GhettoMateCapture].gun_ost + 1
+		end
+		killer_name = sampGetPlayerNickname(killerId)
+		CaptureColor = sampGetPlayerColor(killerId)
+		CaptureColor = argb_to_rgb(CaptureColor)
+		if tonumber(CaptureColor) == 631808 then
+			ini2[GhettoMateCapture].grove_kill = ini2[GhettoMateCapture].grove_kill + 1
+			inicfg.save(ini2, directIni2)
+		end
+		if tonumber(CaptureColor) == 912895 then
+			ini2[GhettoMateCapture].aztecas_kill = ini2[GhettoMateCapture].aztecas_kill + 1
+		end
+		if tonumber(CaptureColor) == 16768548 then
+			ini2[GhettoMateCapture].vagos_kill = ini2[GhettoMateCapture].vagos_kill + 1
+		end
+		if tonumber(CaptureColor) == 3055739 then
+			ini2[GhettoMateCapture].rifa_kill = ini2[GhettoMateCapture].rifa_kill + 1
+		end
+		if tonumber(CaptureColor) == 12916223 then
+			ini2[GhettoMateCapture].ballas_kill = ini2[GhettoMateCapture].ballas_kill + 1
+		end
+		if CaptureColor == nil then CaptureColor = 'FFFFFF' end
+		CaptureColor = string.format("%06X",CaptureColor)
+		if ini4[GhettoMateSettings].NotifyCapture then
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Вы убили {"..CaptureColor.."}" .. killer_name .. u8:decode' {FFFFFF}с помощью ' .. getweaponname(reason), main_color)
+		end
+		ini2[GhettoMateCapture].kill = ini2[GhettoMateCapture].kill + 1
+		inicfg.save(ini2, directIni2)
+	end
+	if my_id == killerId then
+		killer_name = sampGetPlayerNickname(playerId)
+		CaptureColor = sampGetPlayerColor(playerId)
+		CaptureColor = argb_to_rgb(CaptureColor)
+		if CaptureColor == nil then CaptureColor = 'FFFFFF' end
+		CaptureColor = string.format("%06X",CaptureColor)
+		if ini4[GhettoMateSettings].NotifyCapture then
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Вас убил {"..CaptureColor.."}" .. killer_name .. u8:decode' {FFFFFF}с помощью ' .. getweaponname(reason), main_color)
+		end
+		ini2[GhettoMateCapture].death = ini2[GhettoMateCapture].death + 1
+		inicfg.save(ini2, directIni2)
+	end
+end
+
+function argb_to_rgb(argb) -- by Raymond
+    return bit.band(argb, 0xFFFFFF)
+end
+
+function getweaponname(weapon) -- getweaponname by FYP
+  local names = {
+  [0] = u8:decode"Кулака",
+  [1] = u8:decode"Кастета",
+  [2] = u8:decode"Клюшки для гольфа",
+  [3] = u8:decode"Полицейской дубинки",
+  [4] = u8:decode"Ножа",
+  [5] = u8:decode"Биты",
+  [6] = u8:decode"Лопаты",
+  [7] = u8:decode"Кия",
+  [8] = u8:decode"Катаны",
+  [9] = u8:decode"Бензопилы",
+  [10] = u8:decode"Розового дилдо",
+  [11] = u8:decode"Дилдо",
+  [12] = u8:decode"Вибратора",
+  [13] = u8:decode"Серебрянного вибратора",
+  [14] = u8:decode"Цветов",
+  [15] = u8:decode"Трости",
+  [16] = u8:decode"Гранаты",
+  [17] = u8:decode"Слезоточивого газа",
+  [18] = u8:decode"Коктейля молотова",
+  [22] = u8:decode"Пистолета",
+  [23] = u8:decode"Пистолета с глушителем",
+  [24] = u8:decode"Дигла",
+  [25] = u8:decode"Дробовика",
+  [26] = u8:decode"Обреза",
+  [27] = u8:decode"Боевого дробовика",
+  [28] = u8:decode"Micro SMG/Uzi",
+  [29] = u8:decode"MP5",
+  [30] = u8:decode"AK-47",
+  [31] = u8:decode"M4",
+  [32] = u8:decode"Tec-9",
+  [33] = u8:decode"Винтовки",
+  [34] = u8:decode"Снайперской винтовки",
+  [35] = u8:decode"РПГ",
+  [36] = u8:decode"HS Rocket",
+  [37] = u8:decode"Огнемёта",
+  [38] = u8:decode"Минигана",
+  [39] = u8:decode"Satchel Charge",
+  [40] = u8:decode"Detonator",
+  [41] = u8:decode"Газового балончика",
+  [42] = u8:decode"Огнетушителя",
+  [43] = u8:decode"Camera",
+  [44] = u8:decode"Night Vis Goggles",
+  [45] = u8:decode"Thermal Goggles",
+  [46] = u8:decode"Parachute" }
+  return names[weapon]
+end
+
