@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('03/07/2020')
-script_version_number(7)
+script_version_number(8)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -101,6 +101,7 @@ local vehlist = {}
 local spam = true
 local notify = false
 local search = false
+local thiefPos = ""
 --DRUGS
 local DrugsCount = 0
 
@@ -141,6 +142,175 @@ local vehclasses= {
   ["Super GT"] = "A", ["Bullet"] = "A", ["NRG-500"] = "A", ["Hotknife"] = "A", ["BF Injection"] = "A", ["Sandking"] = "A",
   ["Hotring Racer"] = "A", ["Hotring Racer A"] = "A", ["Hotring Racer B"] = "A"
 }
+
+local coord = {
+	[u8:decode'возле Russian Mafia.'] = { x = 1048.270020, y = 2111.360107, z = 10.820000 },
+	[u8:decode'в Montgomery.'] = { x = 1336.939941, y = 287.940002, z = 19.559999 },
+	[u8:decode'в San-Fierro'] = { x = -2437.260010, y = 1035.900024, z = 50.389999 },
+	[u8:decode'возле Фермы 3.'] = { x = 253.089996, y = 8.980000, z = 2.450000 },
+	[u8:decode'рядом с Дальнобоем.'] = { x = 2121.6999511719, y = 2719.1398925781, z = 10.819999694824 }
+} -- by Serhiy_Rubin
+
+local zone = {
+	[u8:decode"Мэрия"] = { x = 1481.229248, y = -1749.487305, z = 15.445300},
+	[u8:decode"Автошкола"] = { x = -2026.514404, y = -95.752701, z = 34.729801},
+	[u8:decode"Автовокзал [LS]"] = { x = 1143.750122, y = -1746.589111, z = 13.135900},
+	[u8:decode"ЖД вокзал [LS]"] = { x = 1808.494507, y = -1896.349854, z = 13.068900},
+	[u8:decode"Авто/ЖД вокзал [SF]"] = { x = -1985.027222, y = 113.767799, z = 27.256201},
+	[u8:decode"Авто/ЖД вокзал [LV]"] = { x = 2843.035156, y = 1343.983032, z = 10.352100},
+	[u8:decode"Fort Carson"] = { x = 61.247101, y = 1189.191040, z = 18.397301},
+	[u8:decode"Прием металла"] = { x = 2263.516846, y = -2537.962158, z = 8.374100},
+	[u8:decode"Наркопритон"] = { x = 2182.824707, y = -1669.634644, z = 14.134600},
+	[u8:decode"Аэропорт [LS]"] = { x = 1967.201050, y = -2173.359375, z = 13.056900},
+	[u8:decode"Аэропорт [SF]"] = { x = -1551.542847, y = -436.707214, z = 5.571300},
+	[u8:decode"Аэропорт [LV]"] = { x = 1726.291260, y = 1610.033325, z = 9.659000},
+	[u8:decode"Причал"] = { x = -2704.270996, y = 2367.194824, z = 70.221397},
+	[u8:decode"Vinewood"] = { x = 1380.432251, y = -897.429016, z = 36.463100},
+	[u8:decode"Пляж Santa Maria"] = { x = 331.410309, y = -1802.567505, z = 4.184100},
+	[u8:decode"Стадион [SF]"] = { x = -2133.911133, y = -444.985199, z = 35.335800},
+	[u8:decode"Спортзал [LV]"] = { x = 2098.566895, y = 2480.085938, z = 10.820300},
+	[u8:decode"Пейнтбол"] = { x = 2488.860107, y = 2776.471191, z = 10.787000},
+	[u8:decode"Церковь"] = { x = -1981.333252, y = 1117.466675, z = 53.123600},
+	[u8:decode"Военкомат"] = { x = -551.301514, y = 2593.905029, z = 53.928398},
+	[u8:decode"Перегон машин. Получение"] = { x = 2476.624756, y = -2596.437256, z = 13.648400},
+	[u8:decode"Перегон машин. Сдача"] = { x = -1705.791138, y = 12.411100, z = 3.554700},
+	[u8:decode"Торговая площадка"] = { x = -1939.609131, y = 555.069824, z = 35.171902},
+	[u8:decode"Черный рынок"] = { x = 2519.776367, y = -1272.694214, z = 34.883598},
+	[u8:decode"Кладбище"] = { x = 815.756226, y = -1103.168091, z = 25.790300},
+	[u8:decode"Банк ЛС"] = { x = 1411.718750, y = -1699.705566, z = 13.539500},
+	[u8:decode"Банк СФ"] = { x = -2226.506348, y = 251.924103, z = 35.320301},
+	[u8:decode"Банк ЛВ"] = { x = 2412.576660, y = 1123.766235, z = 10.820300},
+	[u8:decode"Склад с алкоголем"] = { x = -49.508301, y = -297.973602, z = 4.979400},
+	[u8:decode"Нефтезавод"] = { x = -1029.870972, y = -590.956909, z = 32.012501},
+	[u8:decode"Склад продуктов"] = { x = -502.780609, y = -553.796204, z = 25.087400},
+	[u8:decode"Склад для урожая с ферм"] = { x = 1629.969971, y = 2326.031494, z = 10.820300},
+	[u8:decode"Автобусный парк"] = { x = 1638.358643, y = -1148.711914, z = 23.479000},
+	[u8:decode"Стоянка машин Хот догов"] = { x = -2407.622803, y = 741.159424, z = 34.924900},
+	[u8:decode"Стоянка Инкассаторов"] = { x = -2206.516113, y = 312.605194, z = 35.443501},
+	[u8:decode"Работа грузчика"] = { x = 2230.001709, y = -2211.310547, z = 13.546800},
+	[u8:decode"Склад с наркотиками"] = { x = 2182.824707, y = -1669.634644, z = 14.134600},
+	[u8:decode"Спортзал [LV]"] = { x = 2098.566895, y = 2480.085938, z = 10.820300},
+	[u8:decode"Автоугонщики"] = { x = 2494.080078, y = -1464.709961, z = 24.020000},
+	[u8:decode"Стоянка грабителей ЛЭП"] = { x = 2285.899658, y = -2339.326904, z = 13.546900},
+	[u8:decode"Стоянка электриков"] = { x = -84.297798, y = -1125.867188, z = 0.655700},
+	[u8:decode"Клуб Alhambra"] = { x = 1827.609253, y = -1682.122070, z = 13.118200},
+	[u8:decode"Клуб Jizzy"] = { x = -2593.454834, y = 1362.782349, z = 6.657800},
+	[u8:decode"Клуб Pig Pen"] = { x = 2417.153076, y = -1244.189941, z = 23.380501},
+	[u8:decode"Бар Grove street"] = { x = 2306.214355, y = -1651.560547, z = 14.055600},
+	[u8:decode"Бар Misty"] = { x = -2246.219482, y = -90.975998, z = 34.886700},
+	[u8:decode"Клуб Amnesia"] = { x = 2507.358398, y = 1242.260132, z = 10.826900},
+	[u8:decode"Бар Big Spread Ranch"] = { x = 693.625305, y = 1967.683716, z = 5.539100},
+	[u8:decode"Бар Lil Probe Inn"] = { x = -89.612503, y = 1378.249268, z = 10.469700},
+	[u8:decode"Бар Tierra Robada"] = { x = -2501.242920, y = 2318.692627, z = 4.984300},
+	[u8:decode"Comedy club"] = { x = 1879.190918, y = 2339.538330, z = 11.979900},
+	[u8:decode"4 Дракона"] = { x = 2019.318115, y = 1007.755920, z = 10.820300},
+	[u8:decode"Калигула"] = { x = 2196.960693, y = 1677.085815, z = 12.367100},
+	[u8:decode"Склад бара 4Драконов"] = { x = 1908.672607, y = 965.244629, z = 10.820300},
+	[u8:decode"Склад бара Калигулы"] = { x = 2314.892822, y = 1733.299561, z = 10.820300},
+	[u8:decode"Belagio"] = { x = 1658.526611, y = 2250.043457, z = 12.070100},
+	[u8:decode"Sobrino de Botin"] = { x = 2269.751465, y = -74.159599, z = 27.772400},
+	[u8:decode"Автосалон: Nope"] = { x = 557.109619, y = -1285.791626, z = 16.809401},
+	[u8:decode"Автосалон: D and C"] = { x = -1987.325806, y = 288.925507, z = 33.982700},
+	[u8:decode"Автосалон: B and A"] = { x = -1638.351440, y = 1202.657227, z = 6.762800},
+	[u8:decode"Автосалон [LV]:  B and A"] = { x = 2159.575195, y = 1385.734131, z = 10.386600},
+	[u8:decode"Магазин одежды [LS]"] = { x = 461.512390, y = -1500.866211, z = 31.059700},
+	[u8:decode"Магазин одежды [SF]"] = { x = -1694.672119, y = 951.845581, z = 24.890600},
+	[u8:decode"Магазин одежды [LV]"] = { x = 2802.930664, y = 2430.718018, z = 11.062500},
+	[u8:decode"Оружейный магазин [LS]"] = { x = 1363.999512, y = -1288.826660, z = 13.108200},
+	[u8:decode"Оружейный магазин [SF]"] = { x = -2611.327393, y = 213.002808, z = 5.190800},
+	[u8:decode"Оружейный магазин [LV]"] = { x = 2154.377686, y = 935.150208, z = 10.391700},
+	[u8:decode"Аренда вертолета [LS]"] = { x = 1571.372192, y = -1335.252197, z = 16.484400},
+	[u8:decode"Аренда вертолета [SF]"] = { x = -2241.166992, y = 2322.205566, z = 7.545400},
+	[u8:decode"Аренда вертолета [LV]"] = { x = 2614.588379, y = 2735.326416, z = 36.538601},
+	[u8:decode"Мэрия"] = { x = 1481.229248, y = -1749.487305, z = 15.445300},
+	[u8:decode"Автошкола"] = { x = -2026.514404, y = -95.752701, z = 34.729801},
+	[u8:decode"Медики"] = { x = -2658.259766, y = 627.981018, z = 14.453100},
+	[u8:decode"Полиция [LS]"] = { x = 1548.657715, y = -1675.475220, z = 14.620200},
+	[u8:decode"Полиция [SF]"] = { x = -1607.410034, y = 723.037170, z = 11.895400},
+	[u8:decode"Полиция [LV]"] = { x = 2283.758789, y = 2420.525146, z = 10.381600},
+	[u8:decode"ФБР"] = { x = -2418.072754, y = 497.657501, z = 29.606501},
+	[u8:decode"Военная база [Авианосец]"] = { x = -1554.953613, y = 500.124207, z = 6.745500},
+	[u8:decode"Военная база [Зона 51]"] = { x = 133.322205, y = 1994.773560, z = 19.049900},
+	[u8:decode"Новости [LS]"] = { x = 1632.979248, y = -1712.134644, z = 12.878200},
+	[u8:decode"Новости [SF]"] = { x = -2013.973755, y = 469.190094, z = 34.742901},
+	[u8:decode"Новости [LV]"] = { x = 2617.339600, y = 1179.765137, z = 10.388400},
+	[u8:decode"Особняк Yakuza"] = { x = 1538.844360, y = 2761.891602, z = 10.388200},
+	[u8:decode"Особняк Русской мафии"] = { x = 1001.480103, y = 1690.514526, z = 10.486100},
+	[u8:decode"Особняк La Cosa Nostra"] = { x = 1461.381958, y = 659.340027, z = 10.387200},
+	[u8:decode"Район Grove street"] = { x = 2491.886963, y = -1666.881348, z = 12.910300},
+	[u8:decode"Район Vagos"] = { x = 2803.555420, y = -1585.062500, z = 10.492400},
+	[u8:decode"Район Ballas"] = { x = 2702.399414, y = -2003.425903, z = 12.972800},
+	[u8:decode"Район Rifa"] = { x = 2184.550537, y = -1765.587158, z = 12.948300},
+	[u8:decode"Район Aztecas"] = { x = 1723.966553, y = -2112.802734, z = 12.949000},
+	[u8:decode"Ферма номер: 0"] = { x = -381.502808, y = -1438.979248, z = 25.726601},
+	[u8:decode"Ферма номер: 1"] = { x = -112.575401, y = -10.423600, z = 3.109400},
+	[u8:decode"Ферма номер: 2"] = { x = -1060.398560, y = -1205.524048, z = 129.218704},
+	[u8:decode"Ферма номер: 3"] = { x = -5.595900, y = 67.837303, z = 3.117100},
+	[u8:decode"Ферма номер: 4"] = { x = 1925.693237, y = 170.401703, z = 37.281200},
+	[u8:decode"Порт ЛС"] = { x = 2507.131348, y = -2234.151855, z = 13.546900},
+	[u8:decode"Порт СФ"] = { x = -1731.500000, y = 118.919899, z = 3.549900},
+	[u8:decode"Нефтезавод №1"] = { x = 256.260010, y = 1414.930054, z = 10.699900},
+	[u8:decode"Нефтезавод №2"] = { x = -1046.780029, y = -670.650024, z = 32.349899},
+	[u8:decode"Склад угля №1"] = { x = 832.456787, y = 863.901611, z = 12.665400},
+	[u8:decode"Склад угля №2"] = { x = -1872.910034, y = -1720.079956, z = 21.750000},
+	[u8:decode"Лесопилка №1"] = { x = -449.269897, y = -65.660004, z = 59.409901},
+	[u8:decode"Лесопилка №2"] = { x = -1978.709961, y = -2435.139893, z = 30.620001},
+	[u8:decode"Аренда машин"] = { x = 2236.611816, y = 2770.693848, z = 10.302900},
+	[u8:decode"Hell’s Angels MC"] = { x = 681.496521, y = -475.403198, z = 16.335800},
+	[u8:decode"Mongols MC"] = { x = -1265.713867, y = 2716.588623, z = 50.266300},
+	[u8:decode"Pagans MC"] = { x = -2104.451904, y = -2481.883057, z = 30.625000},
+	[u8:decode"Outlaws MC"] = { x = -309.605103, y = 1303.436035, z = 53.664200},
+	[u8:decode"Sons of Silence MC"] = { x = 1243.829102, y = 203.576202, z = 19.554701},
+	[u8:decode"Warlocks MC"] = { x = 661.681824, y = 1717.991211, z = 7.187500},
+	[u8:decode"Highwaymen MC"] = { x = 22.934000, y = -2646.949219, z = 40.465599},
+	[u8:decode"Bandidos MC"] = { x = -1940.291016, y = 2380.227783, z = 49.695301},
+	[u8:decode"Free Souls MC"] = { x = -253.842606, y = 2603.138184, z = 62.858200},
+	[u8:decode"Vagos MC"] = { x = -315.249115, y = 1773.921875, z = 43.640499},
+	[u8:decode"Idlewood"] = { x = 1940.922241, y = -1772.977905, z = 13.640600},
+	[u8:decode"Mulholland"] = { x = 1003.979614, y = -937.547302, z = 42.327900},
+	[u8:decode"Flint"] = { x = -90.936501, y = -1169.390747, z = 2.417000},
+	[u8:decode"Whetstone"] = { x = -1605.548340, y = -2714.580322, z = 48.533501},
+	[u8:decode"Doherty"] = { x = -2026.463135, y = 156.733704, z = 29.039101},
+	[u8:decode"Easter"] = { x = -1675.596558, y = 413.487213, z = 7.179500},
+	[u8:decode"Juniper"] = { x = -2410.803467, y = 975.240906, z = 45.460800},
+	[u8:decode"ElGuebrabos"] = { x = -1328.197510, y = 2677.596924, z = 50.062500},
+	[u8:decode"BoneCounty"] = { x = 614.468323, y = 1692.853638, z = 7.187500},
+	[u8:decode"FortCarson"] = { x = 70.458099, y = 1218.595947, z = 18.812201},
+	[u8:decode"Come-A-Lot"] = { x = 2115.459717, y = 920.206421, z = 10.820300},
+	[u8:decode"PricklePine"] = { x = 2147.674561, y = 2747.945313, z = 10.820300},
+	[u8:decode"Montgomery"] = { x = 1381.814453, y = 459.148010, z = 20.345100},
+	[u8:decode"Dillimore"] = { x = 655.649109, y = -564.918518, z = 16.335800},
+	[u8:decode"AngelPine"] = { x = -2243.743896, y = -2560.555420, z = 31.921801},
+	[u8:decode"Julius"] = { x = 2640.000244, y = 1106.087646, z = 11.820300},
+	[u8:decode"Emerald Isle"] = { x = 2202.513672, y = 2474.136230, z = 11.820300},
+	[u8:decode"Redsands"] = { x = 1596.309814, y = 2199.004639, z = 11.820300},
+	[u8:decode"Tierra Robada"] = { x = -1471.741943, y = 1863.972412, z = 33.632801},
+	[u8:decode"Flats"] = { x = -2718.883301, y = 50.532200, z = 5.335900},
+	[u8:decode"Palomino Creek"] = { x = 2250.245117, y = 52.701401, z = 23.667101},
+	[u8:decode"Financial"] = { x = -1807.485352, y = 944.666626, z = 25.890600},
+	[u8:decode"Garcia"] = { x = -2335.718750, y = -166.687805, z = 36.554501},
+	[u8:decode"Esplanade"] = { x = -1721.592529, y = 1360.345215, z = 8.185100},
+	[u8:decode"Marina Cluck"] = { x = 928.539917, y = -1352.939331, z = 14.343700},
+	[u8:decode"Willowfield"] = { x = 2397.851563, y = -1899.040039, z = 14.546600},
+	[u8:decode"East"] = { x = 2419.725586, y = -1509.026245, z = 25.000000},
+	[u8:decode"Marina Burger"] = { x = 810.510010, y = -1616.193848, z = 14.546600},
+	[u8:decode"Redsands West"] = { x = 1157.925537, y = 2072.282227, z = 12.062500},
+	[u8:decode"Redsands East"] = { x = 1872.255249, y = 2071.863037, z = 12.062500},
+	[u8:decode"Strip"] = { x = 2083.269775, y = 2224.697510, z = 12.023400},
+	[u8:decode"Creek"] = { x = 2838.201660, y = 2407.693848, z = 12.069000},
+	[u8:decode"Old Venturas Strip"] = { x = 2472.861816, y = 2034.192627, z = 12.062500},
+	[u8:decode"Old Venturas Strip"] = { x = 2393.200684, y = 2041.559448, z = 11.820300},
+	[u8:decode"Spinybed"] = { x = 2169.407715, y = 2795.919189, z = 11.820300},
+	[u8:decode"Angel Pine"] = { x = -2155.095215, y = -2460.377930, z = 30.851601},
+	[u8:decode"СТО [LS]"] = { x = 854.575928, y = -605.205322, z = 18.421801},
+	[u8:decode"СТО [SF]"] = { x = -1799.868042, y = 1200.299316, z = 25.119400},
+	[u8:decode"СТО [LV]"] = { x = 1658.380371, y = 2200.350342, z = 10.820300},
+	[u8:decode"Гараж ЛС"] = { x = 1636.659180, y = -1525.564209, z = 13.306700},
+	[u8:decode"Гараж СФ"] = { x = -1979.227905, y = 436.112000, z = 25.910801},
+	[u8:decode"Гараж ЛВ"] = { x = 1447.295410, y = 2370.614990, z = 10.528000},
+	[u8:decode"Соревнования Гонки"] = { x = 1286.696167, y = -1329.237183, z = 13.554400},
+	[u8:decode"Соревнования Страйкбол"] = { x = 2704.779053, y = -1701.145874, z = 11.843800},
+} -- by Serhiy_Rubin
 
 function main()
 	if not isSampLoaded() or not isSampfuncsLoaded() then return end
@@ -593,10 +763,10 @@ function main()
 						sampSendChat(u8:decode"/f MO LS даёт в " .. ini3[TimeMO].time1)
 						ShowDialog(170)
 					elseif dialogLine[list + 1] ==  '  2. MO SF\t' .. colorMO[2]  .. ini3[TimeMO].time2 then
-						sampSendChat("/f MO SF даёт в " .. ini3[TimeMO].time2)
+						sampSendChat(u8:decode"/f MO SF даёт в " .. ini3[TimeMO].time2)
 						ShowDialog(170)
 					elseif dialogLine[list + 1] ==  '  3. MO LV\t' .. colorMO[3]  .. ini3[TimeMO].time3 then
-						sampSendChat("/f MO LV даёт в " .. ini3[TimeMO].time3)
+						sampSendChat(u8:decode"/f MO LV даёт в " .. ini3[TimeMO].time3)
 						ShowDialog(170)
 					elseif dialogLine[list + 1] ==  '> MO HUD\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF') then
 						cmd_MOhud()
@@ -2844,6 +3014,7 @@ function sampev.onServerMessage(color, text)
 
 	if string.find(text, u8:decode"SMS: Это то что нам нужно, гони её на склад.") then
 		stopSearch()
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF} Метка установлена на {FFFF00}" .. thiefPos, main_color)
 	end
 	
 	if ini4[GhettoMateSettings].AnimUgonyala then
@@ -3088,7 +3259,7 @@ function sampev.onSendCommand(cmd)
 			end
 			if found then
 				if ini4[GhettoMateSettings].NotifyUgonyala then
-					sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {FF0000}\"%s\" {FFFFFF}активирован",carname), main_color)
+					sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Поиск {FF0000}\"%s\" {FFFFFF}активирован", carname), main_color)
 					if ini4[GhettoMateSettings].Sounds then
 						soundManager.playSound("message_tip")
 					end
@@ -3096,16 +3267,23 @@ function sampev.onSendCommand(cmd)
 				search = true
 				removeMarks()
 				for i, veh in ipairs(vehlist) do
-					if string.lower(carname)==string.lower(veh[1]) then
-						digit = math.ceil(veh[2]/250)
-						alpha = math.ceil(veh[3]/250)
-						table.insert(marks,addSpriteBlipForCoord(veh[2],veh[3],veh[4],55))
-						table.insert(ugcheckpoints, createCheckpoint(1, veh[2],veh[3],veh[4],veh[2],veh[3],veh[4], 1))
+					if string.lower(carname) == string.lower(veh[1]) then
+						table.insert(marks, addSpriteBlipForCoord(veh[2], veh[3], veh[4], 55))
+						table.insert(ugcheckpoints, createCheckpoint(1, veh[2], veh[3], veh[4], veh[2], veh[3], veh[4], 1))
+						local _thiefZone = '' 
+						local _minDist = 100000
+						for k,v in pairs(zone) do
+							local dist = getDistanceBetweenCoords3d(veh[2], veh[3], v.z, v.x, v.y, v.z)
+							if dist < _minDist then
+								_minDist = dist
+								_thiefZone = k
+							end
+						end
 						if ini4[GhettoMateSettings].NotifyUgonyala then
 							if veh[6] then
-								sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\"{FFFFFF} был обнаружен{FFFF00} %s {FFFFFF}минут назад, за рулем был: {FFFF00}%s", veh[1], math.floor((os.clock()-veh[7])/60), veh[6]), main_color)
+								sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\"{FFFFFF} был обнаружен{FFFF00} %s {FFFFFF}минут назад, за рулем был: {FFFF00}%s{FFFFFF}. Около {FFFF00}%s", veh[1], math.floor((os.clock()-veh[7])/60), veh[6], _thiefZone), main_color)
 							else
-								sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\"{FFFFFF} был обнаружен{FFFF00} %s {FFFFFF}минут назад", veh[1], math.floor((os.clock()-veh[7])/60)), main_color)
+								sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\"{FFFFFF} был обнаружен{FFFF00} %s {FFFFFF}минут назад. Около {FFFF00}%s", veh[1], math.floor((os.clock()-veh[7])/60), _thiefZone), main_color)
 							end
 						end
 					end
@@ -3425,6 +3603,40 @@ function soundManager.playSound(soundName)
 		setAudioStreamVolume(soundManager.soundsList[soundName], 50/100)
 		setAudioStreamState(soundManager.soundsList[soundName], as_action.PLAY)
 	end
+end
+
+function sampev.onSetRaceCheckpoint(type, position) --by Serhiy_Rubin
+	for k,v in pairs(coord) do
+		local dist = getDistanceBetweenCoords3d(position.x, position.y, position.z, v.x, v.y, v.z)
+		if dist <= 3 then
+			thiefPos = k
+		end
+	end
+end
+
+function sampev.onCreateGangZone(zoneId, squareStart, squareEnd, color) --by Serhiy_Rubin
+	if HexColor(color) == '000000' then
+		lua_thread.create(function()
+			local _thiefZone = '' 
+			local _minDist = 100000
+			local playerDist = 0
+			for k,v in pairs(zone) do
+				local dist = getDistanceBetweenCoords3d(squareStart.x, squareStart.y, v.z, v.x, v.y, v.z)
+				if dist < _minDist then
+					playerDist = getDistanceBetweenCoords3d(squareStart.x, squareStart.y, v.z, getCharCoordinates(PLAYER_PED))
+					_minDist = dist
+					_thiefZone = k
+				end
+			end
+			thiefZone = { squareStart.x, squareStart.y, 0.0 }
+			wait(200)
+			sampAddChatMessage(string.format(u8:decode' [GhettoMate] {FFFFFF}Выделен черный квадрат рядом с {FFFF00}"%s" (%d m){FFFFFF}  Вам до квадрата: {FFFF00}%d {FFFFFF}метров.', _thiefZone, _minDist, playerDist), 0xFF6AB1FF)
+		end)
+	end
+end
+
+function HexColor(color) --by Serhiy_Rubin
+	return ("%06x"):format(bit.band(color, 0xFFFFFF))
 end
 
 	--if ini4[GhettoMateSettings].Sounds then
