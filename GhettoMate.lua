@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('03/07/2020')
-script_version_number(8.1)
+script_version_number(8.2)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -760,13 +760,37 @@ function main()
 			if result then
 				if button == 1 then
 					if dialogLine[list + 1]     ==  '  1. MO LS\t' .. colorMO[1]  .. ini3[TimeMO].time1 then
-						sampSendChat(u8:decode"/f MO LS даёт в " .. ini3[TimeMO].time1)
+						if ini3[TimeMO].time1 == u8:decode"Неизвестно" then 
+							sampSendChat(u8:decode"/fs Нам нужно ехать в MO LS")
+						else
+							if ini3[SecondsMO].time1 - totalSeconds > 0 then
+								sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Нельзя]")
+							else
+								sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Можно]")
+							end
+						end
 						ShowDialog(170)
 					elseif dialogLine[list + 1] ==  '  2. MO SF\t' .. colorMO[2]  .. ini3[TimeMO].time2 then
-						sampSendChat(u8:decode"/f MO SF даёт в " .. ini3[TimeMO].time2)
+						if ini3[TimeMO].time2 == u8:decode"Неизвестно" then 
+							sampSendChat(u8:decode"/fs Нам нужно ехать в MO SF")
+						else
+							if ini3[SecondsMO].time2 - totalSeconds > 0 then
+								sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Нельзя]")
+							else
+								sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Можно]")
+							end
+						end
 						ShowDialog(170)
 					elseif dialogLine[list + 1] ==  '  3. MO LV\t' .. colorMO[3]  .. ini3[TimeMO].time3 then
-						sampSendChat(u8:decode"/f MO LV даёт в " .. ini3[TimeMO].time3)
+						if ini3[TimeMO].time3 == u8:decode"Неизвестно" then 
+							sampSendChat(u8:decode"/fs Нам нужно ехать в MO LV")
+						else
+							if ini3[SecondsMO].time3 - totalSeconds > 0 then
+								sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Нельзя]")
+							else
+								sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Можно]")
+							end
+						end
 						ShowDialog(170)
 					elseif dialogLine[list + 1] ==  '> MO HUD\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF') then
 						cmd_MOhud()
@@ -1726,12 +1750,30 @@ function UseDrugsWaiting(DrugsCount)
 end
 
 function MONotifyWaiting()
-	wait(1200)
-	sampSendChat("/f MO LS даёт в " .. ini3[TimeMO].time1)
-	wait(1200)
-	sampSendChat("/f MO SF даёт в " .. ini3[TimeMO].time2)
-	wait(1200)
-	sampSendChat("/f MO LV даёт в " .. ini3[TimeMO].time3)
+	if ini3[TimeMO].time1 ~= u8:decode"Неизвестно" then
+		wait(1200)
+		if ini3[SecondsMO].time1 - totalSeconds > 0 then
+			sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Нельзя]")
+		else
+			sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Можно]")
+		end
+	end
+	if ini3[TimeMO].time2 ~= u8:decode"Неизвестно" then
+		wait(1200)
+		if ini3[SecondsMO].time2 - totalSeconds > 0 then
+			sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Нельзя]")
+		else
+			sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Можно]")
+		end
+	end
+	if ini3[TimeMO].time3 ~= u8:decode"Неизвестно" then
+		wait(1200)
+		if ini3[SecondsMO].time3 - totalSeconds > 0 then
+			sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Нельзя]")
+		else
+			sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Можно]")
+		end
+	end
 end
 
 function Timer()
