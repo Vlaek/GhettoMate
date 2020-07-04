@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('03/07/2020')
-script_version_number(8)
+script_version_number(8.1)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -2997,7 +2997,9 @@ function sampev.onServerMessage(color, text)
 	end
 
 	if string.find(text, u8:decode" Отличная тачка. Будет нужна работа, приходи.") then
-		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF} Следующий угон доступен через {FFFF00}15 {FFFFFF}минут. Таймер активирован.", main_color)
+		if ini4[GhettoMateSettings].NotifyUgonyala then
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF} Следующий угон доступен через {FFFF00}15 {FFFFFF}минут. Таймер активирован.", main_color)
+		end
 		stopSearch()
 		ugontimer = os.clock() + 900
 	end
@@ -3014,7 +3016,9 @@ function sampev.onServerMessage(color, text)
 
 	if string.find(text, u8:decode"SMS: Это то что нам нужно, гони её на склад.") then
 		stopSearch()
-		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF} Метка установлена на {FFFF00}" .. thiefPos, main_color)
+		if ini4[GhettoMateSettings].NotifyUgonyala then
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Метка установлена {FFFF00}" .. thiefPos, main_color)
+		end
 	end
 	
 	if ini4[GhettoMateSettings].AnimUgonyala then
@@ -3561,7 +3565,9 @@ function cmd_usedrugs()
 			if DrugsCount >= 16 then DrugsCount = 15 end
 			sampSendChat("/usedrugs " .. DrugsCount)
 		end
-		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Было использовано {FFFF00}" .. DrugsCount .. u8:decode" {FFFFFF}нарко", main_color)
+		if ini4[GhettoMateSettings].NotifyDrugs then
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Было использовано {FFFF00}" .. DrugsCount .. u8:decode" {FFFFFF}нарко", main_color)
+		end
 	end
 end
 
@@ -3630,7 +3636,9 @@ function sampev.onCreateGangZone(zoneId, squareStart, squareEnd, color) --by Ser
 			end
 			thiefZone = { squareStart.x, squareStart.y, 0.0 }
 			wait(200)
-			sampAddChatMessage(string.format(u8:decode' [GhettoMate] {FFFFFF}Выделен черный квадрат рядом с {FFFF00}"%s" (%d m){FFFFFF}  Вам до квадрата: {FFFF00}%d {FFFFFF}метров.', _thiefZone, _minDist, playerDist), 0xFF6AB1FF)
+			if ini4[GhettoMateSettings].NotifyUgonyala then
+				sampAddChatMessage(string.format(u8:decode' [GhettoMate] {FFFFFF}Выделен черный квадрат рядом с {FFFF00}"%s" (%d m).{FFFFFF} До квадрата: {FFFF00}%d {FFFFFF}метров.', _thiefZone, _minDist, playerDist), main_color)
+			end
 		end)
 	end
 end
@@ -3638,7 +3646,3 @@ end
 function HexColor(color) --by Serhiy_Rubin
 	return ("%06x"):format(bit.band(color, 0xFFFFFF))
 end
-
-	--if ini4[GhettoMateSettings].Sounds then
-	--	soundManager.playSound("message_news")
-	--end
