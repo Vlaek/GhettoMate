@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('24/07/2020')
-script_version_number(11)
+script_version_number(10)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -606,7 +606,7 @@ function main()
 	
 	imgui.ApplyCustomStyle()
 	imgui.GetIO().Fonts:Clear()
-	imgui.GetIO().Fonts:AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 17/(1920/getScreenResolution()), nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic())
+	imgui.GetIO().Fonts:AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 14/(1600/getScreenResolution()), nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic())
 	imgui.RebuildFonts()
 	imgui.Process = false
 	
@@ -1004,7 +1004,7 @@ function imgui.OnDrawFrame()
 		imgui.SetNextWindowPos(vec(200, 118), 2)
 		imgui.Begin('GhettoMate ', main_window_state, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
 		imgui.BeginChild('top', vec(210, 9), false)
-			imgui.BeginChild("##inp101",vec(32.5,9), false)
+			imgui.BeginChild("##inp101", vec(32.5,9), false)
 				if imgui.Selectable(' Параметры', imgui.settingsTab == 1) then
 					imgui.settingsTab = 1
 				end
@@ -1117,6 +1117,7 @@ function imgui.OnDrawFrame()
 				ini4[GhettoMateSettings].NotifyCapture = not ini4[GhettoMateSettings].NotifyCapture
 				inicfg.save(ini4, directIni4)
 			end
+			
 			if larek_window_state.v then
 				if imgui.Button("Выключить Larek HUD", vec(55,0)) then
 					cmd_hud()
@@ -1185,15 +1186,15 @@ function imgui.OnDrawFrame()
 				end
 			end
 			if ugtimer > 0 then
-				imgui.SameLine(290)
+				imgui.SameLine(toScreenX(114))
 				imgui.Text("" .. math.floor(ugtimer))
 			end
 			
 			if DrugsTimer > 0 then
-				imgui.SameLine(350)
+				imgui.SameLine(toScreenX(139))
 				imgui.Text("" .. math.floor(DrugsTimer))
 			end
-			imgui.SameLine(370)
+			imgui.SameLine(toScreenX(148))
 			if not Use then
 				if imgui.Button("Drugs OFF", vec(55,0)) then
 					cmd_usedrugs()
@@ -1221,7 +1222,7 @@ function imgui.OnDrawFrame()
 					cmd_sucher(0)
 				end
 			end
-			imgui.SameLine(370)
+			imgui.SameLine(toScreenX(148))
 			if not GetGuns then
 				if imgui.Button("AutoGetGuns ON", vec(55,0)) then
 					cmd_autogetguns()
@@ -1813,7 +1814,7 @@ function imgui.OnDrawFrame()
 			imgui.Text("" .. tonumber(ini.GhettoMateConfig.my_drugs)/1)
 			imgui.Separator()
 			
-			--setcursorpos --ini[GunList]
+			
 			imgui.SetCursorPos(vec(10, 128))
 			if imgui.Button("Сделать", vec(28,0)) then
 				GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
@@ -2030,9 +2031,8 @@ function imgui.OnDrawFrame()
 		else 
 			if script.update then
 				if imgui.Button("Обновить скрипт", vec(28,0)) then
-					--imgui.Process = false
-					--update()
-					sampAddChatMessage("RABIT", -1)
+					imgui.Process = false
+					update()
 				end
 			else
 				imgui.Text("Актуальная версия скрипта")
