@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
-script_version('03/07/2020')
-script_version_number(9)
+script_version('24/07/2020')
+script_version_number(10)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -14,18 +14,14 @@ require "lib.moonloader"
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
 
-local directIni = "\\GhettoMate\\GhettoMate.ini"
-local directIni2 = "\\GhettoMate\\GhettoMateMoney.ini"
-local directIni3 = "\\GhettoMate\\GhettoMateTime.ini"
-local directIni4 = "\\GhettoMate\\GhettoMateSettings.ini"
-local ini = {}
+local ini  = {}
 local ini2 = {}
 local ini3 = {}
 local ini4 = {}
 
-local main_window_state = imgui.ImBool(false)
-local secondary_window_state = imgui.ImBool(false)
-local text_buffer = imgui.ImBuffer(256)
+local main_window_state  = imgui.ImBool(false)
+local larek_window_state = imgui.ImBool(false)
+local mo_window_state    = imgui.ImBool(false)
 
 local resX, resY = getScreenResolution()
 local main_color = 0x323232
@@ -86,9 +82,9 @@ local MOLS = false
 local MOSF = false
 local MOLV = false
 local timerMagazO = {u8:decode"Неизвестно", u8:decode"Неизвестно", u8:decode"Неизвестно"}
-local timerMO = {0, 0, 0}
-local hourMO = {0, 0, 0}
-local minuteMO = {0, 0, 0}
+local timerMO   = {0, 0, 0}
+local hourMO    = {0, 0, 0}
+local minuteMO  = {0, 0, 0}
 local secondsMO = {0, 0, 0}
 local colorMO = {"{808080}", "{808080}", "{808080}"}
 local MOTime = {false, false, false}
@@ -104,6 +100,30 @@ local search = false
 local thiefPos = ""
 --DRUGS
 local DrugsCount = 0
+local Use = true
+local DrugsTimer = 0
+local UseDrugsTimer = 0
+--sellgun
+local price_gun = 0
+local text_buffer_pt1 = imgui.ImBuffer(256)
+local text_buffer_id1 = imgui.ImBuffer(256)
+local text_buffer_pt2 = imgui.ImBuffer(256)
+local text_buffer_id2 = imgui.ImBuffer(256)
+local text_buffer_pt3 = imgui.ImBuffer(256)
+local text_buffer_id3 = imgui.ImBuffer(256)
+local text_buffer_pt4 = imgui.ImBuffer(256)
+local text_buffer_id4 = imgui.ImBuffer(256)
+local text_buffer_pt5 = imgui.ImBuffer(256)
+local text_buffer_id5 = imgui.ImBuffer(256)
+local text_buffer_pt6 = imgui.ImBuffer(256)
+local text_buffer_id6 = imgui.ImBuffer(256)
+local text_buffer_pt7 = imgui.ImBuffer(256)
+local text_buffer_id7 = imgui.ImBuffer(256)
+local text_buffer_pt8 = imgui.ImBuffer(256)
+local text_buffer_id8 = imgui.ImBuffer(256)
+
+local text_buffer_nick = imgui.ImBuffer(256)
+local text_buffer_car  = imgui.ImBuffer(256)
 
 local vehnames = {
   "Landstalker","Bravura","Buffalo","1","Perenniel","Sentinel","1","1","1","1","1","Infernus",
@@ -329,32 +349,29 @@ function main()
 	server = sampGetCurrentServerName():gsub('|', '')
 	server = (server:find('02') and 'Two' or (server:find('Revolution') and 'Revolution' or (server:find('Legacy') and 'Legacy' or (server:find('Classic') and 'Classic' or ''))))
 	if server == '' then thisScript():unload() end
+	AdressConfig = string.format("%s\\moonloader\\config" , getGameDirectory())
+	AdressFolder = string.format("%s\\moonloader\\config\\GhettoMate\\%s\\%s", getGameDirectory(), server, my_name)
+	if not doesDirectoryExist(AdressConfig) then createDirectory(AdressConfig) end
+	if not doesDirectoryExist(AdressFolder) then createDirectory(AdressFolder) end
+	directIni = string.format("GhettoMate\\%s\\%s\\GhettoMate.ini", server, my_name)
+	directIni2 = string.format("GhettoMate\\%s\\%s\\GhettoMateMoney.ini", server, my_name)
+	directIni3 = string.format("GhettoMate\\%s\\GhettoMateTime.ini", server)
+	directIni4 = string.format("GhettoMate\\%s\\%s\\GhettoMateSettings.ini", server, my_name)
+
 	sampRegisterChatCommand("lhud", cmd_hud)
+	sampRegisterChatCommand("gm", cmd_menu)
 	sampRegisterChatCommand("mohud", cmd_MOhud)
 	sampRegisterChatCommand("gfind", cmd_sucher)
 	sampRegisterChatCommand("drugs", cmd_usedrugs)
-	sampRegisterChatCommand('GhettoMate', function()
-		ShowDialog(20)
-	end)
-	sampRegisterChatCommand('GM', function()
-		ShowDialog(20)
-	end)
-	sampRegisterChatCommand('larek', function()
-		ShowDialog(1)
-	end)
 	
-	Wait = lua_thread.create_suspended(Waiting)
-	MOWait = lua_thread.create_suspended(MOWaiting)
-	Wait2 = lua_thread.create_suspended(Waiting2)
-	MOWait2 = lua_thread.create_suspended(MOWaiting2)
-	DrugsWait = lua_thread.create_suspended(DrugsWaiting)
+	Wait         = lua_thread.create_suspended(Waiting)
+	MOWait       = lua_thread.create_suspended(MOWaiting)
+	Wait2        = lua_thread.create_suspended(Waiting2)
+	MOWait2      = lua_thread.create_suspended(MOWaiting2)
+	DrugsWait    = lua_thread.create_suspended(DrugsWaiting)
 	UseDrugsWait = lua_thread.create_suspended(UseDrugsWaiting)
 	MONotifyWait = lua_thread.create_suspended(MONotifyWaiting)
-	
-	AdressConfig = string.format("%s\\moonloader\\config", getGameDirectory())
-	AdressGhettoMate = string.format("%s\\moonloader\\config\\GhettoMate", getGameDirectory())
-	if not doesDirectoryExist(AdressConfig) then createDirectory(AdressConfig) end
-	if not doesDirectoryExist(AdressGhettoMate) then createDirectory(AdressGhettoMate) end
+	GunWait      = lua_thread.create_suspended(GunWaiting)
 	
 	soundManager.loadSound("message_sms")
 	soundManager.loadSound("message_news")
@@ -389,20 +406,45 @@ function main()
 	
 	GhettoMateConfig = string.format('GhettoMateConfig')
 	if ini[GhettoMateConfig] == nil then
-		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Откалибруйте время в /GhettoMate", main_color)
 		ini = inicfg.load({
 			[GhettoMateConfig] = {
-				time = tonumber(0),
-				X = tonumber(0),
-				Y = tonumber(0),
-				X_MO =tonumber(0),
-				Y_MO = tonumber(0)
+				time            = tonumber(0),
+				X               = tonumber(0),
+				Y               = tonumber(0),
+				X_MO            = tonumber(0),
+				Y_MO            = tonumber(0),
+				timeCalibration = false,
+				price_Deagle    = tonumber(200),
+				price_M4        = tonumber(200),
+				price_Shotgun   = tonumber(200),
+				price_SDpistol  = tonumber(100),
+				price_AK47      = tonumber(200),
+				price_SMG       = tonumber(150),
+				price_Rifle     = tonumber(300),
+				price_Drugs     = tonumber(30),
+				my_mats         = tonumber(0),
+				my_drugs        = tonumber(0)
 			}
 		}, directIni)
 		inicfg.save(ini, directIni)
 	end
 	
-	GhettoMateMoney = string.format('GhettoMateMoney-%s', my_name)
+	GunList = string.format('GunList')
+	if ini[GunList] == nil then
+		ini = inicfg.load({
+			[GunList] = {
+				gun1 = tonumber(0),
+				pt1  = tonumber(30),
+				gun2 = tonumber(1),
+				pt2  = tonumber(160),
+				gun3 = tonumber(2),
+				pt3  = tonumber(10)
+			}
+		}, directIni)
+		inicfg.save(ini, directIni)
+	end
+	
+	GhettoMateMoney = string.format('GhettoMateMoney')
 	if ini2[GhettoMateMoney] == nil then
 		ini2 = inicfg.load({
 			[GhettoMateMoney] = {
@@ -417,7 +459,7 @@ function main()
 		inicfg.save(ini2, directIni2)
 	end
 	
-	GhettoMateMO = string.format('GhettoMateMO-%s', my_name)
+	GhettoMateMO = string.format('GhettoMateMO')
 	if ini2[GhettoMateMO] == nil then
 		ini2 = inicfg.load({
 			[GhettoMateMO] = {
@@ -428,32 +470,32 @@ function main()
 		inicfg.save(ini2, directIni2)
 	end
 	
-	GhettoMateCapture = string.format('GhettoMateCapture-%s', my_name)
+	GhettoMateCapture = string.format('GhettoMateCapture')
 	if ini2[GhettoMateCapture] == nil then
 		ini2 = inicfg.load({
 			[GhettoMateCapture] = {
-				kill  = tonumber(0),
-				death  = tonumber(0),
-				grove_kill  = tonumber(0),
-				ballas_kill  = tonumber(0),
+				kill          = tonumber(0),
+				death         = tonumber(0),
+				grove_kill    = tonumber(0),
+				ballas_kill   = tonumber(0),
 				aztecas_kill  = tonumber(0),
-				vagos_kill = tonumber(0),
-				rifa_kill = tonumber(0),
-				gun_fist = tonumber(0),
-				gun_m4 = tonumber(0),
-				gun_deagle = tonumber(0),
-				gun_ak47 = tonumber(0),
-				gun_sdpistol = tonumber(0),
-				gun_shotgun = tonumber(0),
-				gun_rifle = tonumber(0),
-				gun_bat = tonumber(0),
-				gun_ost = tonumber(0)
+				vagos_kill    = tonumber(0),
+				rifa_kill     = tonumber(0),
+				gun_fist      = tonumber(0),
+				gun_m4        = tonumber(0),
+				gun_deagle    = tonumber(0),
+				gun_ak47      = tonumber(0),
+				gun_sdpistol  = tonumber(0),
+				gun_shotgun   = tonumber(0),
+				gun_rifle     = tonumber(0),
+				gun_bat       = tonumber(0),
+				gun_ost       = tonumber(0)
 			}
 		}, directIni2)
 		inicfg.save(ini2, directIni2)
 	end
 	
-	GhettoMateTime = string.format('GhettoMateTime-Server-%s', server)
+	GhettoMateTime = string.format('GhettoMateTime')
 	if ini3[GhettoMateTime] == nil then
 		ini3 = inicfg.load({
 			[GhettoMateTime] = {
@@ -478,7 +520,7 @@ function main()
 		inicfg.save(ini3, directIni3)
 	end
 	
-	GhettoMateSeconds = string.format('GhettoMateSeconds-Server-%s', server)
+	GhettoMateSeconds = string.format('GhettoMateSeconds')
 	if ini3[GhettoMateSeconds] == nil then
 		ini3 = inicfg.load({
 			[GhettoMateSeconds] = {
@@ -503,60 +545,64 @@ function main()
 		inicfg.save(ini3, directIni3)
 	end
 	
-	TimeMO = string.format('TimeMO-Server-%s', server)
+	TimeMO = string.format('TimeMO')
 	if ini3[TimeMO] == nil then
 		ini3 = inicfg.load({
 			[TimeMO] = {
-				time1  = u8:decode"Неизвестно",
-				time2  = u8:decode"Неизвестно",
-				time3  = u8:decode"Неизвестно"
+				time1 = u8:decode"Неизвестно",
+				time2 = u8:decode"Неизвестно",
+				time3 = u8:decode"Неизвестно"
 			}
 		}, directIni3)
 		inicfg.save(ini3, directIni3)
 	end
 	
-	SecondsMO = string.format('SecondsMO-Server-%s', server)
+	SecondsMO = string.format('SecondsMO')
 	if ini3[SecondsMO] == nil then
 		ini3 = inicfg.load({
 			[SecondsMO] = {
-				time1  = tonumber(0),
-				time2  = tonumber(0),
-				time3  = tonumber(0)
+				time1 = tonumber(0),
+				time2 = tonumber(0),
+				time3 = tonumber(0)
 			}
 		}, directIni3)
 		inicfg.save(ini3, directIni3)
 	end
 	
-	GhettoMateSettings = string.format('GhettoMateSettings-%s', my_name)
+	GhettoMateSettings = string.format('GhettoMateSettings')
 	if ini4[GhettoMateSettings] == nil then
 		ini4 = inicfg.load({
 			[GhettoMateSettings] = {
-				NotifyLarek=true,
-				TimerNotifyLarek=tonumber(15),
-				NotifyUgonyala=true,
-				AnimUgonyala=true,
-				IdAnimUgonyala=tonumber(14),
-				NotifyFind=true,
-				NotifyDrugs=true,
-				NotifyAutoGetGuns=true,
-				TimerNotifyMO=tonumber(15),
-				NotifyMO=true,
-				Health=120,
-				Sounds=false,
-				NotifyCapture=true
+				NotifyLarek       = true,
+				TimerNotifyLarek  = tonumber(15),
+				NotifyUgonyala    = true,
+				AnimUgonyala      = true,
+				IdAnimUgonyala    = tonumber(14),
+				NotifyFind        = true,
+				NotifyDrugs       = true,
+				NotifyAutoGetGuns = true,
+				TimerNotifyMO     = tonumber(15),
+				NotifyMO          = true,
+				Health            = 120,
+				Sounds            = false,
+				NotifyCapture     = true
 			}
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
 	end
 	
 	ini = inicfg.load(GhettoMateConfig, directIni)
-	ini = inicfg.load(GhettoMateName, directIni)
 	ini2 = inicfg.load(GhettoMateMoney, directIni2)
 	ini3 = inicfg.load(GhettoMateTime, directIni3)
 	ini4 = inicfg.load(GhettoMateSettings, directIni4)
+	imgui.initBuffers()
 	
 	checkUpdates()
 	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Успешно загрузился!", main_color)
+	
+	if not ini[GhettoMateConfig].timeCalibration then
+		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Откалибруйте время в /gm", main_color)
+	end
 	
 	imgui.ApplyCustomStyle()
 	imgui.Process = false
@@ -599,6 +645,7 @@ function main()
 		TimerMMO()
 		Refresh()
 		RefreshMO()
+		AfterDeathReload()
 		
 		if isKeyJustPressed(VK_MULTIPLY) then
 			cmd_autogetguns()
@@ -608,595 +655,12 @@ function main()
 			cmd_usedrugs()
 		end
 		
-		local caption = sampGetDialogCaption()
-		local result, button, list, input = sampHasDialogRespond(1000)
-		if caption == u8:decode'GhettoMate: Список' then
-			if result and button == 1 then
-				if dialogLine[list + 1]     ==  u8:decode'  1. Larek\t' then
-					ShowDialog(1)
-				elseif dialogLine[list + 1] ==  u8:decode'  2. MO\t' then
-					ShowDialog(170)
-				elseif dialogLine[list + 1] ==  u8:decode'  3. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF') then
-					cmd_autogetguns()
-					ShowDialog(20)
-				elseif dialogLine[list + 1] ==  u8:decode'  4. Find\t'  .. (Find and '{06940f}ON' or '{d10000}OFF') then
-					if Find == true then
-						Find = false
-						deleteCheckpoint(checkpoint)
-						removeBlip(blip)
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Поиск прекращен", main_color)
-						ShowDialog(20)
-					else
-						deleteCheckpoint(checkpoint)
-						removeBlip(blip)
-						ShowDialog(21)
-					end
-				elseif dialogLine[list + 1] ==  u8:decode'  5. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF') then
-					if search == true then
-						sampSendChat("/fc")
-					else
-						ShowDialog(22)
-					end
-				elseif dialogLine[list + 1] ==  u8:decode'  6. Capture\t' then
-					ShowDialog(172)
-				elseif dialogLine[list + 1] ==  u8:decode'> Настройки\t' then
-					ShowDialog(23)
-				elseif dialogLine[list + 1] ==  u8:decode'> Помощь\t' then
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/larek {FFFFFF}- включить диалоговое окно Larek", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/lhud {FFFFFF}- включить Larek HUD", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/l (1,2, .. 16){FFFFFF} - указать в какой ларёк ехать + тайминг", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/mohud {FFFFFF}- включить MO HUD", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/mo (ls, sf и lv) {FFFFFF}- указать в какой МО ехать + тайминг", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/autogetguns {FFFFFF}- включить/выключить AutoGetGuns (* NumPad)", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/gfind (id){FFFFFF} - искать игрока по его id", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/fc (name) {FFFFFF}- искать машину по ее названию", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/fc {FFFFFF}- если без аргумента, то прекращает поиск", main_color)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFF00}/drugs {FFFFFF}- заюзать наркотики", main_color)
-					ShowDialog(20)
-				else
-					ShowDialog(20)
-				end
-			end
-		end
-
-		local result, button, list, input = sampHasDialogRespond(1003)
-		if caption == u8:decode'Настройки' then
-			if result then
-				if button == 1 then
-					if dialogLine[list + 1]     ==  u8:decode'  1. Уведомления от Larek\t' .. (ini4[GhettoMateSettings].NotifyLarek and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].NotifyLarek = not ini4[GhettoMateSettings].NotifyLarek
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  2. Таймер уведомлений от Larek\t' .. ini4[GhettoMateSettings].TimerNotifyLarek then
-						ShowDialog(24)
-						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] ==  u8:decode'  3. Уведомления от Ugonyala\t' .. (ini4[GhettoMateSettings].NotifyUgonyala and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].NotifyUgonyala = not ini4[GhettoMateSettings].NotifyUgonyala
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  4. Анимация угона\t' .. (ini4[GhettoMateSettings].AnimUgonyala and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].AnimUgonyala = not ini4[GhettoMateSettings].AnimUgonyala
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  5. Выбрать анимацию угона\t' .. ini4[GhettoMateSettings].IdAnimUgonyala then
-						ShowDialog(25)
-						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] ==  u8:decode'  6. Уведомления от Find\t' .. (ini4[GhettoMateSettings].NotifyFind and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].NotifyFind = not ini4[GhettoMateSettings].NotifyFind
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  7. Максимальное количество ХП\t' .. ini4[GhettoMateSettings].Health then
-						ShowDialog(27)
-						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] ==  u8:decode'  8. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].NotifyDrugs = not ini4[GhettoMateSettings].NotifyDrugs
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode'  9. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].NotifyAutoGetGuns = not ini4[GhettoMateSettings].NotifyAutoGetGuns
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode' 10. Уведомления от MO\t' .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].NotifyMO = not ini4[GhettoMateSettings].NotifyMO
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					elseif dialogLine[list + 1] ==  u8:decode' 11. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO then
-						ShowDialog(26)
-						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] ==  u8:decode' 12. Звуки\t' .. (ini4[GhettoMateSettings].Sounds and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].Sounds = not ini4[GhettoMateSettings].Sounds
-						ShowDialog(23)
-						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] ==  u8:decode' 13. Уведомления от Capture\t' .. (ini4[GhettoMateSettings].NotifyCapture and '{06940f}ON' or '{d10000}OFF') then
-						ini4[GhettoMateSettings].NotifyCapture = not ini4[GhettoMateSettings].NotifyCapture
-						ShowDialog(23)
-						inicfg.save(ini4, directIni4)
-					elseif dialogLine[list + 1] == ' 14. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия') then
-						if script.update then
-							imgui.Process = false
-							update()
-						else
-							sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Последняя версия уже установлена", main_color)
-							ShowDialog(23)
-						end
-					else
-						ShowDialog(20)
-					end
-				end
-				if button == 0 then
-					ShowDialog(20)
-				end
-			end
-		end
-
-		local result, button, list, input = sampHasDialogRespond(1488)
-		if caption == u8:decode'Larek: Список' then
-			if result then
-				if button == 1 then
-					if dialogLine[list + 1]     ==  '  1. ' .. ini[GhettoMateName].Name1  .. '\t' .. color[1]  .. ini3[GhettoMateTime].time1 then
-						ShowDialog(3, dialogTextToList[list + 1], input, false, 'config', 'MagazName1')
-					elseif dialogLine[list + 1] ==  '  2. ' .. ini[GhettoMateName].Name2  .. '\t' .. color[2]  .. ini3[GhettoMateTime].time2 then
-						ShowDialog(4, dialogTextToList[list + 1], input, false, 'config', 'MagazName2')
-					elseif dialogLine[list + 1] ==  '  3. ' .. ini[GhettoMateName].Name3  .. '\t' .. color[3]  .. ini3[GhettoMateTime].time3 then
-						ShowDialog(5, dialogTextToList[list + 1], input, false, 'config', 'MagazName3')
-					elseif dialogLine[list + 1] ==  '  4. ' .. ini[GhettoMateName].Name4  .. '\t' .. color[4]  .. ini3[GhettoMateTime].time4 then
-						ShowDialog(6, dialogTextToList[list + 1], input, false, 'config', 'MagazName4')
-					elseif dialogLine[list + 1] ==  '  5. ' .. ini[GhettoMateName].Name5  .. '\t' .. color[5]  .. ini3[GhettoMateTime].time5 then
-						ShowDialog(7, dialogTextToList[list + 1], input, false, 'config', 'MagazName5')
-					elseif dialogLine[list + 1] ==  '  6. ' .. ini[GhettoMateName].Name6  .. '\t' .. color[6]  .. ini3[GhettoMateTime].time6 then
-						ShowDialog(8, dialogTextToList[list + 1], input, false, 'config', 'MagazName6')
-					elseif dialogLine[list + 1] ==  '  7. ' .. ini[GhettoMateName].Name7  .. '\t' .. color[7]  .. ini3[GhettoMateTime].time7 then
-						ShowDialog(9, dialogTextToList[list + 1], input, false, 'config', 'MagazName7')
-					elseif dialogLine[list + 1] ==  '  8. ' .. ini[GhettoMateName].Name8  .. '\t' .. color[8]  .. ini3[GhettoMateTime].time8 then
-						ShowDialog(10, dialogTextToList[list + 1], input, false, 'config', 'MagazName8')
-					elseif dialogLine[list + 1] ==  '  9. ' .. ini[GhettoMateName].Name9  .. '\t' .. color[9]  .. ini3[GhettoMateTime].time9 then
-						ShowDialog(11, dialogTextToList[list + 1], input, false, 'config', 'MagazName9')
-					elseif dialogLine[list + 1] ==  ' 10. ' .. ini[GhettoMateName].Name10 .. '\t' .. color[10] .. ini3[GhettoMateTime].time10 then
-						ShowDialog(12, dialogTextToList[list + 1], input, false, 'config', 'MagazName10')
-					elseif dialogLine[list + 1] ==  ' 11. ' .. ini[GhettoMateName].Name11 .. '\t' .. color[11] .. ini3[GhettoMateTime].time11 then
-						ShowDialog(13, dialogTextToList[list + 1], input, false, 'config', 'MagazName11')
-					elseif dialogLine[list + 1] ==  ' 12. ' .. ini[GhettoMateName].Name12 .. '\t' .. color[12] .. ini3[GhettoMateTime].time12 then
-						ShowDialog(14, dialogTextToList[list + 1], input, false, 'config', 'MagazName12')
-					elseif dialogLine[list + 1] ==  ' 13. ' .. ini[GhettoMateName].Name13 .. '\t' .. color[13] .. ini3[GhettoMateTime].time13 then
-						ShowDialog(15, dialogTextToList[list + 1], input, false, 'config', 'MagazName13')
-					elseif dialogLine[list + 1] ==  ' 14. ' .. ini[GhettoMateName].Name14 .. '\t' .. color[14] .. ini3[GhettoMateTime].time14 then
-						ShowDialog(16, dialogTextToList[list + 1], input, false, 'config', 'MagazName14')
-					elseif dialogLine[list + 1] ==  ' 15. ' .. ini[GhettoMateName].Name15 .. '\t' .. color[15] .. ini3[GhettoMateTime].time15 then
-						ShowDialog(17, dialogTextToList[list + 1], input, false, 'config', 'MagazName15')
-					elseif dialogLine[list + 1] ==  ' 16. ' .. ini[GhettoMateName].Name16 .. '\t' .. color[16] .. ini3[GhettoMateTime].time16 then
-						ShowDialog(18, dialogTextToList[list + 1], input, false, 'config', 'MagazName16')
-					elseif dialogLine[list + 1] == '> Larek HUD\t' .. (main_window_state.v and '{06940f}ON' or '{d10000}OFF') then
-						cmd_hud()
-						ShowDialog(1)
-					elseif dialogLine[list + 1] == u8:decode'> Фиксация HUDa\t' .. (InterfacePosition and '{06940f}ON' or '{d10000}OFF') then
-						InterfacePosition = not InterfacePosition
-						inicfg.save(ini, directIni)
-						ShowDialog(1)
-					elseif dialogLine[list + 1] == u8:decode'> Разница во времени с Samp-RP\t'  then
-						Calibration()
-						ShowDialog(1)
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Время успешно откалибровано", main_color)
-					elseif dialogLine[list + 1] == u8:decode'> Статистика\t'  then
-						ShowDialog(19)
-					else
-						ShowDialog(20)
-					end
-				end
-				if button == 0 then
-					ShowDialog(20)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1700)
-		if caption == u8:decode'MO: Список' then
-			if result then
-				if button == 1 then
-					if dialogLine[list + 1]     ==  '  1. MO LS\t' .. colorMO[1]  .. ini3[TimeMO].time1 then
-						if ini3[TimeMO].time1 == u8:decode"Неизвестно" then 
-							sampSendChat(u8:decode"/fs Нам нужно ехать в MO LS")
-						else
-							if ini3[SecondsMO].time1 - totalSeconds > 0 then
-								sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Нельзя]")
-							else
-								sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Можно]")
-							end
-						end
-						ShowDialog(170)
-					elseif dialogLine[list + 1] ==  '  2. MO SF\t' .. colorMO[2]  .. ini3[TimeMO].time2 then
-						if ini3[TimeMO].time2 == u8:decode"Неизвестно" then 
-							sampSendChat(u8:decode"/fs Нам нужно ехать в MO SF")
-						else
-							if ini3[SecondsMO].time2 - totalSeconds > 0 then
-								sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Нельзя]")
-							else
-								sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Можно]")
-							end
-						end
-						ShowDialog(170)
-					elseif dialogLine[list + 1] ==  '  3. MO LV\t' .. colorMO[3]  .. ini3[TimeMO].time3 then
-						if ini3[TimeMO].time3 == u8:decode"Неизвестно" then 
-							sampSendChat(u8:decode"/fs Нам нужно ехать в MO LV")
-						else
-							if ini3[SecondsMO].time3 - totalSeconds > 0 then
-								sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Нельзя]")
-							else
-								sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Можно]")
-							end
-						end
-						ShowDialog(170)
-					elseif dialogLine[list + 1] ==  '> MO HUD\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF') then
-						cmd_MOhud()
-						ShowDialog(170)
-					elseif dialogLine[list + 1] == u8:decode'> Фиксация HUDa\t' .. (InterfacePositionMO and '{06940f}ON' or '{d10000}OFF') then
-						InterfacePositionMO = not InterfacePositionMO
-						inicfg.save(ini, directIni)
-						ShowDialog(170)
-					elseif dialogLine[list + 1] ==  u8:decode'> Сообщить о таймингах\t' then
-						MONotifyWait:run()
-						ShowDialog(170)
-					elseif dialogLine[list + 1] == u8:decode'> Разница во времени с Samp-RP\t'  then
-						Calibration()
-						ShowDialog(170)
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Время успешно откалибровано", main_color)
-					elseif dialogLine[list + 1] == u8:decode'> Статистика\t'  then
-						ShowDialog(171)
-					else
-						ShowDialog(20)
-					end
-				end
-				if button == 0 then
-					ShowDialog(20)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1490)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name1 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1491)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name2 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1492)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name3 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1493)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name4 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1494)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name5 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1495)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name6 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1496)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name7 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1497)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name8 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1498)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name9 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1499)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name10 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1500)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name11 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1501)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name12 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					if button == 0 then
-						ShowDialog(20)
-					end
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1502)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name13 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1503)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name14 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1504)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name15 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1505)
-		if caption == u8:decode"Изменение названия" then
-			if result then
-				if button == 1 then
-					ini[GhettoMateName].Name16 = input
-					inicfg.save(ini, directIni)
-					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое название: {FFFF00}" .. input, main_color)
-					ShowDialog(1)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1506)
-		if caption == u8:decode"Статистика" then
-			if result then
-				if button == 1 then
-					ShowDialog(19)
-				else
-					ShowDialog(1)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1001)
-		if caption == u8:decode"Sucher" then
-			if result then
-				if button == 1 then
-					cmd_sucher(input)
-					ShowDialog(20)
-				else
-					ShowDialog(20)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1002)
-		if caption == u8:decode"Ugonyala" then
-			if result then
-				if button == 1 then
-					sampSendChat("/fc " .. input)
-					ShowDialog(20)
-				else
-					ShowDialog(20)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1003)
-		if caption == u8:decode"Настройки" then
-			if result then
-				if button == 1 then
-					ShowDialog(20)
-				else
-					ShowDialog(20)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1004)
-		if caption == u8:decode"Таймер" then
-			if result then
-				if button == 1 then
-					if tonumber(input) >= tonumber(1800) or tonumber(input) <= tonumber(0) then
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Диапозон от {FFFF00}1 {FFFFFF}до {FFFF00}1799", main_color)
-						ShowDialog(23)
-					else
-						ini4[GhettoMateSettings].TimerNotifyLarek = input
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое время таймера составляет: {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyLarek .. u8:decode"{FFFFFF} секунд", main_color)
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					end
-				else
-					ShowDialog(23)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1005)
-		if caption == u8:decode"Анимация" then
-			if result then
-				if button == 1 then
-					if tonumber(input) > tonumber(45) or tonumber(input) < tonumber(0) then
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Диапозон от {FFFF00}0 {FFFFFF}до {FFFF00}45", main_color)
-						ShowDialog(23)
-					else
-						ini4[GhettoMateSettings].IdAnimUgonyala = input
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новый id анимации: {FFFF00}" .. ini4[GhettoMateSettings].IdAnimUgonyala, main_color)
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					end
-				else
-					ShowDialog(23)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1006)
-		if caption == u8:decode"Таймер" then
-			if result then
-				if button == 1 then
-					if tonumber(input) >= tonumber(1800) or tonumber(input) <= tonumber(0) then
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Диапозон от {FFFF00}1 {FFFFFF}до {FFFF00}1799", main_color)
-						ShowDialog(23)
-					else
-						ini4[GhettoMateSettings].TimerNotifyMO = input
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Новое время таймера составляет: {FFFF00}" .. ini4[GhettoMateSettings].TimerNotifyMO .. u8:decode"{FFFFFF} секунд", main_color)
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					end
-				else
-					ShowDialog(23)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1007)
-		if caption == u8:decode"Количество ХП" then
-			if result then
-				if button == 1 then
-					if tonumber(input) == tonumber(120) or tonumber(input) == tonumber(130) or tonumber(input) == tonumber(140) or tonumber(input) == tonumber(150) or tonumber(input) == tonumber(160) then
-						ini4[GhettoMateSettings].Health = input
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Максимальное количество хп составляет: {FFFF00}" .. ini4[GhettoMateSettings].Health, main_color)
-						inicfg.save(ini4, directIni4)
-						ShowDialog(23)
-					else
-						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Невозможно. Возможные значения: {FFFF00}120, 130, 140, 150 и 160", main_color)
-						ShowDialog(23)
-					end
-				else
-					ShowDialog(23)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1701)
-		if caption == u8:decode"Статистика" then
-			if result then
-				if button == 1 then
-					ShowDialog(171)
-				else
-					ShowDialog(170)
-				end
-			end
-		end
-		local result, button, list, input = sampHasDialogRespond(1702)
-		if caption == u8:decode"Статистика" then
-			if result then
-				if button == 1 then
-					ShowDialog(172)
-				else
-					ShowDialog(20)
-				end
-			end
-		end
 		if Find then
 			Suchen()
 		end
-
+		
+		DrugsTimer = UseDrugsTimer - os.clock()
+		
 		--UGONYALA--
 		ugtimer = ugontimer - os.clock()
 		charinstream = getAllChars()
@@ -1344,21 +808,31 @@ function main()
 end
 
 function cmd_hud(arg)
-	main_window_state.v = not main_window_state.v
-	if not main_window_state.v and not secondary_window_state.v then
+	larek_window_state.v = not larek_window_state.v
+	if not larek_window_state.v and not mo_window_state.v and not main_window_state.v then
 		imgui.Process = false
 	end
-	if main_window_state.v then
+	if larek_window_state.v then
 		imgui.Process = true
 	end
 end
 
 function cmd_MOhud(arg)
-	secondary_window_state.v = not secondary_window_state.v
-	if not main_window_state.v and not secondary_window_state.v then
+	mo_window_state.v = not mo_window_state.v
+	if not larek_window_state.v and not mo_window_state.v and not main_window_state.v then
 		imgui.Process = false
 	end
-	if secondary_window_state.v then
+	if mo_window_state.v then
+		imgui.Process = true
+	end
+end
+
+function cmd_menu()
+	main_window_state.v = not main_window_state.v
+	if not larek_window_state.v and not mo_window_state.v and not main_window_state.v then
+		imgui.Process = false
+	end
+	if main_window_state.v then
 		imgui.Process = true
 	end
 end
@@ -1476,13 +950,1118 @@ function imgui.TextColoredRGB(text)
 
     render_text(text)
 end
+
+function imgui.initBuffers()
+	imgui.settingsTab = 1
+	
+	imgui.LarekName1  = imgui.ImBuffer(u8(ini[GhettoMateName].Name1),  256)
+	imgui.LarekName2  = imgui.ImBuffer(u8(ini[GhettoMateName].Name2),  256)
+	imgui.LarekName3  = imgui.ImBuffer(u8(ini[GhettoMateName].Name3),  256)
+	imgui.LarekName4  = imgui.ImBuffer(u8(ini[GhettoMateName].Name4),  256)
+	imgui.LarekName5  = imgui.ImBuffer(u8(ini[GhettoMateName].Name5),  256)
+	imgui.LarekName6  = imgui.ImBuffer(u8(ini[GhettoMateName].Name6),  256)
+	imgui.LarekName7  = imgui.ImBuffer(u8(ini[GhettoMateName].Name7),  256)
+	imgui.LarekName8  = imgui.ImBuffer(u8(ini[GhettoMateName].Name8),  256)
+	imgui.LarekName9  = imgui.ImBuffer(u8(ini[GhettoMateName].Name9),  256)
+	imgui.LarekName10 = imgui.ImBuffer(u8(ini[GhettoMateName].Name10), 256)
+	imgui.LarekName11 = imgui.ImBuffer(u8(ini[GhettoMateName].Name11), 256)
+	imgui.LarekName12 = imgui.ImBuffer(u8(ini[GhettoMateName].Name12), 256)
+	imgui.LarekName13 = imgui.ImBuffer(u8(ini[GhettoMateName].Name13), 256)
+	imgui.LarekName14 = imgui.ImBuffer(u8(ini[GhettoMateName].Name14), 256)
+	imgui.LarekName15 = imgui.ImBuffer(u8(ini[GhettoMateName].Name15), 256)
+	imgui.LarekName16 = imgui.ImBuffer(u8(ini[GhettoMateName].Name16), 256)
+	
+	imgui.TimerNotifyMO = imgui.ImInt(ini4[GhettoMateSettings].TimerNotifyMO)
+	imgui.Health = imgui.ImInt(ini4[GhettoMateSettings].Health)
+	imgui.IdAnimUgonyala = imgui.ImInt(ini4[GhettoMateSettings].IdAnimUgonyala)
+	imgui.TimerNotifyLarek = imgui.ImInt(ini4[GhettoMateSettings].TimerNotifyLarek)
+	
+	imgui.price_Drugs = imgui.ImInt(ini.GhettoMateConfig.price_Drugs)
+	imgui.price_Deagle = imgui.ImInt(ini.GhettoMateConfig.price_Deagle)
+	imgui.price_M4 = imgui.ImInt(ini.GhettoMateConfig.price_M4)
+	imgui.price_Shotgun = imgui.ImInt(ini.GhettoMateConfig.price_Shotgun)
+	imgui.price_SDpistol = imgui.ImInt(ini.GhettoMateConfig.price_SDpistol)
+	imgui.price_AK47 = imgui.ImInt(ini.GhettoMateConfig.price_AK47)
+	imgui.price_SMG = imgui.ImInt(ini.GhettoMateConfig.price_SMG)
+	imgui.price_Rifle = imgui.ImInt(ini.GhettoMateConfig.price_Rifle)
+	
+	combo_select1 = imgui.ImInt(ini.GunList.gun1)
+	combo_select2 = imgui.ImInt(ini.GunList.gun2)
+	combo_select3 = imgui.ImInt(ini.GunList.gun3)
+	imgui.pt1 = imgui.ImInt(ini.GunList.pt1)
+	imgui.pt2 = imgui.ImInt(ini.GunList.pt2)
+	imgui.pt3 = imgui.ImInt(ini.GunList.pt3)
+	
+end
+
 function imgui.OnDrawFrame()
 	if main_window_state.v then
+		imgui.ShowCursor = true
+		imgui.SetNextWindowSize(vec(212, 190))
+		imgui.SetNextWindowPos(vec(200, 118), 2)
+		imgui.Begin('GhettoMate ', main_window_state, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
+		imgui.BeginChild('top', vec(210, 9), false)
+			imgui.BeginChild("##inp101",vec(32.5,9), false)
+				if imgui.Selectable(' Параметры', imgui.settingsTab == 1) then
+					imgui.settingsTab = 1
+				end
+			imgui.EndChild()
+			imgui.SameLine()
+			imgui.BeginChild("##inp102",vec(32.5, 9), false)
+				if imgui.Selectable('       Larek', imgui.settingsTab == 2) then
+					imgui.settingsTab = 2
+				end
+			imgui.EndChild()
+			imgui.SameLine()
+			imgui.BeginChild("##inp103",vec(32.5, 9), false)
+				if imgui.Selectable('         MO', imgui.settingsTab == 3) then
+					imgui.settingsTab = 3
+				end
+			imgui.EndChild()
+			imgui.SameLine()
+			imgui.BeginChild("##inp104",vec(32.5, 9), false)
+				if imgui.Selectable('      Seller', imgui.settingsTab == 4) then
+					imgui.settingsTab = 4
+				end
+			imgui.EndChild()
+			imgui.SameLine()
+			imgui.BeginChild("##inp105",vec(32.5, 9), false)
+				if imgui.Selectable('     Capture', imgui.settingsTab == 5) then
+					imgui.settingsTab = 5
+				end
+			imgui.EndChild()
+			imgui.SameLine()
+			imgui.BeginChild("##inp107",vec(32.5, 9), false)
+				if imgui.Selectable(' Информация', imgui.settingsTab == 6) then
+					imgui.settingsTab = 6
+				end
+			imgui.EndChild()
+		imgui.EndChild()
+		
+		imgui.BeginChild('bottom', vec(205, 160), true)
+		if imgui.settingsTab == 1 then
+			imgui.initBuffers()
+			if imgui.Checkbox("Уведомления от Larek. Таймер уведомлений: ", imgui.ImBool(ini4[GhettoMateSettings].NotifyLarek)) then
+				ini4[GhettoMateSettings].NotifyLarek = not ini4[GhettoMateSettings].NotifyLarek
+				inicfg.save(ini4, directIni4)
+			end
+			imgui.SameLine()
+			imgui.PushItemWidth(toScreenX(165/5))
+			if imgui.InputInt("##inp1", imgui.TimerNotifyLarek, 1, 1) then
+				if imgui.TimerNotifyLarek.v ~= nil and imgui.TimerNotifyLarek.v ~= "" and imgui.TimerNotifyLarek.v >= 0 and imgui.TimerNotifyLarek.v <= 1800 then
+					ini4[GhettoMateSettings].TimerNotifyLarek = imgui.TimerNotifyLarek.v
+					inicfg.save(ini4, directIni4)
+				end
+			end
+			imgui.PopItemWidth()
+			if imgui.Checkbox("Уведомления от Ugonyala", imgui.ImBool(ini4[GhettoMateSettings].NotifyUgonyala)) then
+				ini4[GhettoMateSettings].NotifyUgonyala = not ini4[GhettoMateSettings].NotifyUgonyala
+				inicfg.save(ini4, directIni4)
+			end
+			if imgui.Checkbox("Анимация угона:", imgui.ImBool(ini4[GhettoMateSettings].AnimUgonyala)) then
+				ini4[GhettoMateSettings].AnimUgonyala = not ini4[GhettoMateSettings].AnimUgonyala
+				inicfg.save(ini4, directIni4)
+			end
+			imgui.SameLine()
+			imgui.PushItemWidth(toScreenX(165/5))
+			if imgui.InputInt("##inp2", imgui.IdAnimUgonyala, 1, 1) then
+				if imgui.IdAnimUgonyala.v ~= nil and imgui.IdAnimUgonyala.v ~= "" and imgui.IdAnimUgonyala.v >= 0 and imgui.IdAnimUgonyala.v <= 45 then
+					ini4[GhettoMateSettings].IdAnimUgonyala = imgui.IdAnimUgonyala.v
+					inicfg.save(ini4, directIni4)
+				end
+			end
+			imgui.PopItemWidth()
+			if imgui.Checkbox("Уведомления от поиска игрока", imgui.ImBool(ini4[GhettoMateSettings].NotifyFind)) then
+				ini4[GhettoMateSettings].NotifyFind = not ini4[GhettoMateSettings].NotifyFind
+				inicfg.save(ini4, directIni4)
+			end
+
+			if imgui.Checkbox("Уведомления от Drugs. Максимальное количество ХП: ", imgui.ImBool(ini4[GhettoMateSettings].NotifyDrugs)) then
+				ini4[GhettoMateSettings].NotifyDrugs = not ini4[GhettoMateSettings].NotifyDrugs
+				inicfg.save(ini4, directIni4)
+			end
+			imgui.SameLine()
+			imgui.PushItemWidth(toScreenX(165/5))
+			if imgui.InputInt("##inp3", imgui.Health, 1, 1) then
+				if imgui.Health.v ~= nil and imgui.Health.v ~= "" then
+					ini4[GhettoMateSettings].Health = imgui.Health.v
+					inicfg.save(ini4, directIni4)
+				end
+			end
+			imgui.PopItemWidth()
+			if imgui.Checkbox("Уведомления от AutoGetGuns", imgui.ImBool(ini4[GhettoMateSettings].NotifyAutoGetGuns)) then
+				ini4[GhettoMateSettings].NotifyAutoGetGuns = not ini4[GhettoMateSettings].NotifyAutoGetGuns
+				inicfg.save(ini4, directIni4)
+			end
+			if imgui.Checkbox("Уведомления от магазинов одежды. Таймер уведомлений: ", imgui.ImBool(ini4[GhettoMateSettings].NotifyMO)) then
+				ini4[GhettoMateSettings].NotifyMO = not ini4[GhettoMateSettings].NotifyMO
+				inicfg.save(ini4, directIni4)
+			end
+			imgui.SameLine()
+			imgui.PushItemWidth(toScreenX(165/5))
+			if imgui.InputInt("##inp4", imgui.TimerNotifyMO, 1, 1) then
+				if imgui.TimerNotifyMO.v ~= nil and imgui.TimerNotifyMO.v ~= "" and imgui.TimerNotifyMO.v >= 0 and imgui.TimerNotifyMO.v <= 1800 then
+					ini4[GhettoMateSettings].TimerNotifyMO = imgui.TimerNotifyMO.v
+					inicfg.save(ini4, directIni4)
+				end
+			end
+			imgui.PopItemWidth()
+			if imgui.Checkbox("Звуки", imgui.ImBool(ini4[GhettoMateSettings].Sounds)) then
+				ini4[GhettoMateSettings].Sounds = not ini4[GhettoMateSettings].Sounds
+				inicfg.save(ini4, directIni4)
+			end
+			if imgui.Checkbox("Уведомления во время капта", imgui.ImBool(ini4[GhettoMateSettings].NotifyCapture)) then
+				ini4[GhettoMateSettings].NotifyCapture = not ini4[GhettoMateSettings].NotifyCapture
+				inicfg.save(ini4, directIni4)
+			end
+			if larek_window_state.v then
+				if imgui.Button("Выключить Larek HUD", vec(55,0)) then
+					cmd_hud()
+				end
+			else
+				if imgui.Button("Включить Larek HUD", vec(55,0)) then
+					cmd_hud()
+				end
+			end
+			imgui.SameLine(toScreenX(60))
+			if InterfacePosition then
+				if imgui.Button("Фиксация HUDa" .. "##inp1110", vec(55,0)) then
+					InterfacePosition = not InterfacePosition
+					inicfg.save(ini, directIni)
+				end
+			else
+				if imgui.Button("Зафиксировать HUD" .. "##inp1113", vec(55,0)) then
+					InterfacePosition = not InterfacePosition
+					inicfg.save(ini, directIni)
+				end
+			end
+			if not ini[GhettoMateConfig].timeCalibration then
+				imgui.SameLine(toScreenX(120))
+				if imgui.Button("Откалибровать время", vec(55,0)) then
+					Calibration()
+				end
+			end
+			
+			if mo_window_state.v then
+				if imgui.Button("Выключить MO HUD", vec(55,0)) then
+					cmd_MOhud()
+				end
+			else
+				if imgui.Button("Включить MO HUD", vec(55,0)) then
+					cmd_MOhud()
+				end
+			end
+			imgui.SameLine(toScreenX(60))
+			if InterfacePositionMO then
+				if imgui.Button("Фиксация HUDa" .. "##inp1111", vec(55,0)) then
+					InterfacePositionMO = not InterfacePositionMO
+					inicfg.save(ini, directIni)
+				end
+			else
+				if imgui.Button("Зафиксировать HUD" .. "##inp1112", vec(55,0)) then
+					InterfacePositionMO = not InterfacePositionMO
+					inicfg.save(ini, directIni)
+				end
+			end
+			
+			if not search then
+				imgui.PushItemWidth(toScreenX(55))
+				imgui.InputText(u8"##inp111", text_buffer_car)
+				imgui.PopItemWidth()
+				imgui.SameLine()
+				if imgui.Button("Искать машину", vec(55,0)) then
+					if text_buffer_car.v ~= nil and text_buffer_car.v ~= "" then
+						sampSendChat("/fc " .. text_buffer_car.v)
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ошибка", main_color)
+					end
+				end
+			else
+				if imgui.Button("Прекратить поиск машины", vec(112,0)) then
+					sampSendChat("/fc")
+				end
+			end
+			if ugtimer > 0 then
+				imgui.SameLine(290)
+				imgui.Text("" .. math.floor(ugtimer))
+			end
+			
+			if DrugsTimer > 0 then
+				imgui.SameLine(350)
+				imgui.Text("" .. math.floor(DrugsTimer))
+			end
+			imgui.SameLine(370)
+			if not Use then
+				if imgui.Button("Drugs OFF", vec(55,0)) then
+					cmd_usedrugs()
+				end
+			else
+				if imgui.Button("Drugs ON", vec(55,0)) then
+					cmd_usedrugs()
+				end
+			end
+			
+			if not Find then
+				imgui.PushItemWidth(toScreenX(55))
+				imgui.InputText(u8"##inp112", text_buffer_nick)
+				imgui.PopItemWidth()
+				imgui.SameLine()
+				if imgui.Button("Искать игрока по id", vec(55,0)) then
+					if text_buffer_nick.v ~= nil and text_buffer_nick.v ~= "" and isNumber(text_buffer_nick.v) then
+						cmd_sucher(text_buffer_nick.v)
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Ошибка", main_color)
+					end
+				end
+			else
+				if imgui.Button("Прекратить поиск игрока", vec(112,0)) then
+					cmd_sucher(0)
+				end
+			end
+			imgui.SameLine(370)
+			if not GetGuns then
+				if imgui.Button("AutoGetGuns ON", vec(55,0)) then
+					cmd_autogetguns()
+				end
+			else
+				if imgui.Button("AutoGetGuns OFF", vec(55,0)) then
+					cmd_autogetguns()
+				end
+			end
+			
+
+		elseif imgui.settingsTab == 2 then
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10001', imgui.LarekName1) then
+				if imgui.LarekName1.v ~= nil and imgui.LarekName1.v ~= "" then
+					ini[GhettoMateName].Name1 = u8:decode(imgui.LarekName1.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. color[1] .. ini3[GhettoMateTime].time1)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10002', imgui.LarekName9) then
+				if imgui.LarekName9.v ~= nil and imgui.LarekName9.v ~= "" then
+					ini[GhettoMateName].Name9 = u8:decode(imgui.LarekName9.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[9] .. ini3[GhettoMateTime].time9)
+			
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10003', imgui.LarekName2) then
+				if imgui.LarekName2.v ~= nil and imgui.LarekName2.v ~= "" then
+					ini[GhettoMateName].Name2 = u8:decode(imgui.LarekName2.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8""  .. color[2] .. ini3[GhettoMateTime].time2)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10004', imgui.LarekName10) then
+				if imgui.LarekName10.v ~= nil and imgui.LarekName10.v ~= "" then
+					ini[GhettoMateName].Name10 = u8:decode(imgui.LarekName10.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[10] .. ini3[GhettoMateTime].time10)
+			
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10005', imgui.LarekName3) then
+				if imgui.LarekName3.v ~= nil and imgui.LarekName3.v ~= "" then
+					ini[GhettoMateName].Name3 = u8:decode(imgui.LarekName3.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. color[3] .. ini3[GhettoMateTime].time3)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10006', imgui.LarekName11) then
+				if imgui.LarekName11.v ~= nil and imgui.LarekName11.v ~= "" then
+					ini[GhettoMateName].Name11 = u8:decode(imgui.LarekName11.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[11] .. ini3[GhettoMateTime].time11)
+			
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10007', imgui.LarekName4) then
+				if imgui.LarekName4.v ~= nil and imgui.LarekName4.v ~= "" then
+					ini[GhettoMateName].Name4 = u8:decode(imgui.LarekName4.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. color[4] .. ini3[GhettoMateTime].time4)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10008', imgui.LarekName12) then
+				if imgui.LarekName12.v ~= nil and imgui.LarekName12.v ~= "" then
+					ini[GhettoMateName].Name12 = u8:decode(imgui.LarekName12.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[12] .. ini3[GhettoMateTime].time12)
+			
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp10009', imgui.LarekName5) then
+				if imgui.LarekName5.v ~= nil and imgui.LarekName5.v ~= "" then
+					ini[GhettoMateName].Name5 = u8:decode(imgui.LarekName5.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. color[5] .. ini3[GhettoMateTime].time5)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp100010', imgui.LarekName13) then
+				if imgui.LarekName13.v ~= nil and imgui.LarekName13.v ~= "" then
+					ini[GhettoMateName].Name13 = u8:decode(imgui.LarekName13.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[13] .. ini3[GhettoMateTime].time13)
+			
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp100011', imgui.LarekName6) then
+				if imgui.LarekName6.v ~= nil and imgui.LarekName6.v ~= "" then
+					ini[GhettoMateName].Name6 = u8:decode(imgui.LarekName6.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. color[6] .. ini3[GhettoMateTime].time6)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp100012', imgui.LarekName14) then
+				if imgui.LarekName14.v ~= nil and imgui.LarekName14.v ~= "" then
+					ini[GhettoMateName].Name14 = u8:decode(imgui.LarekName14.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[14] .. ini3[GhettoMateTime].time14)
+			
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp100013', imgui.LarekName7) then
+				if imgui.LarekName7.v ~= nil and imgui.LarekName7.v ~= "" then
+					ini[GhettoMateName].Name7 = u8:decode(imgui.LarekName7.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. color[7] .. ini3[GhettoMateTime].time7)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp100014', imgui.LarekName15) then
+				if imgui.LarekName15.v ~= nil and imgui.LarekName15.v ~= "" then
+					ini[GhettoMateName].Name15 = u8:decode(imgui.LarekName15.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[15] .. ini3[GhettoMateTime].time15)			
+			
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp100015', imgui.LarekName8) then
+				if imgui.LarekName8.v ~= nil and imgui.LarekName8.v ~= "" then
+					ini[GhettoMateName].Name8 = u8:decode(imgui.LarekName8.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. color[8] .. ini3[GhettoMateTime].time8)
+				imgui.SameLine(toScreenX(100))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.InputText('##inp100016', imgui.LarekName16) then
+				if imgui.LarekName16.v ~= nil and imgui.LarekName16.v ~= "" then
+					ini[GhettoMateName].Name16 = u8:decode(imgui.LarekName16.v)
+					inicfg.save(ini, directIni)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Введите название", main_color)
+				end
+			end
+			imgui.PopItemWidth()
+				imgui.SameLine(toScreenX(150))
+			imgui.TextColoredRGB(u8"" .. color[16] .. ini3[GhettoMateTime].time16)
+				
+			imgui.Separator()
+			imgui.TextColoredRGB(u8:decode"Денег награблено: " .. ini2[GhettoMateMoney].money)
+			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count)
+			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count2)
+			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count3)
+			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count4)
+			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count1)
+			
+		elseif imgui.settingsTab == 3 then
+			imgui.TextColoredRGB(u8"1.  MO LS")
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
+			imgui.TextColoredRGB(u8"2.  MO SF")
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
+			imgui.TextColoredRGB(u8"3.  MO LV")
+				imgui.SameLine(toScreenX(50))
+			imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
+			imgui.Separator()
+			imgui.TextColoredRGB(u8:decode"Статистика: ")
+			imgui.TextColoredRGB(u8:decode"Материалов привезено: " .. ini2[GhettoMateMO].mats)
+			imgui.TextColoredRGB(u8:decode"Фур украдено: " .. ini2[GhettoMateMO].cars)
+			if imgui.Button("Сообщить тайминги" .. '##inp13', vec(55,0)) then
+				MONotifyWaiting()
+			end
+			
+		elseif imgui.settingsTab == 4 then
+			--imgui.Dummy(vec(165/6, 18))
+			imgui.Dummy(vec(165/6, 0))
+			imgui.SameLine(toScreenX(34))
+			imgui.Text("Патроны")
+			imgui.SameLine(toScreenX(64))
+			imgui.Text("Цена за пт", vec(165/6, 150/8))
+			imgui.SameLine(toScreenX(34))
+			imgui.Dummy(vec(165/3, 0))
+			imgui.SameLine(toScreenX(94))
+			imgui.Text("ID", vec(165/6, 150/8))
+			imgui.SameLine(toScreenX(124))
+			imgui.Dummy(vec(165/3, 0))
+			imgui.SameLine(toScreenX(153))
+			imgui.Text("Материалов: " .. ini.GhettoMateConfig.my_mats)
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("1. Deagle", vec(25,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp11', text_buffer_pt1)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp", imgui.price_Deagle, 0, 500) then
+				ini.GhettoMateConfig.price_Deagle = imgui.price_Deagle.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp14', text_buffer_id1)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp13', vec(28,0)) then
+				if text_buffer_pt1.v ~= nil and text_buffer_pt1.v ~= "" and tonumber(text_buffer_pt1.v) > 0 and isNumber(text_buffer_pt1.v) then
+					if text_buffer_id1.v ~= nil and text_buffer_id1.v ~= "" and tonumber(text_buffer_id1.v) >= 0 and tonumber(text_buffer_id1.v) < 1000 then
+						sampSendChat("/sellgun deagle " .. tonumber(text_buffer_pt1.v) .. " " .. ini.GhettoMateConfig.price_Deagle * tonumber(text_buffer_pt1.v) .. " " .. tonumber(text_buffer_id1.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Себе" .. '##inp14', vec(28,0)) then
+				if text_buffer_pt1.v ~= nil and text_buffer_pt1.v ~= "" and tonumber(text_buffer_pt1.v) > 0 and isNumber(text_buffer_pt1.v) then
+					sampSendChat("/gun deagle " .. tonumber(text_buffer_pt1.v))
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("2. M4", vec(25,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp21', text_buffer_pt2)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp24", imgui.price_M4, 0, 500) then
+				ini.GhettoMateConfig.price_M4 = imgui.price_M4.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp22', text_buffer_id2)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp23', vec(28,0)) then
+				if text_buffer_pt2.v ~= nil and text_buffer_pt2.v ~= "" and tonumber(text_buffer_pt2.v) > 0 and isNumber(text_buffer_pt2.v) then
+					if text_buffer_id2.v ~= nil and text_buffer_id2.v ~= "" and tonumber(text_buffer_id2.v) >= 0 and tonumber(text_buffer_id2.v) < 1000 then
+						sampSendChat("/sellgun m4 " .. tonumber(text_buffer_pt2.v) .. " " .. ini.GhettoMateConfig.price_M4 * tonumber(text_buffer_pt2.v) .. " " .. tonumber(text_buffer_id2.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Себе" .. '##inp24', vec(28,0)) then
+				if text_buffer_pt2.v ~= nil and text_buffer_pt2.v ~= "" and tonumber(text_buffer_pt2.v) > 0 and isNumber(text_buffer_pt2.v) then
+					sampSendChat("/gun M4 " .. tonumber(text_buffer_pt2.v))
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("3. Shotgun\t", vec(28,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp31', text_buffer_pt3)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp34", imgui.price_Shotgun, 0, 500) then
+				ini.GhettoMateConfig.price_Shotgun = imgui.price_Shotgun.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp32', text_buffer_id3)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp33', vec(28,0)) then
+				if text_buffer_pt3.v ~= nil and text_buffer_pt3.v ~= "" and tonumber(text_buffer_pt3.v) > 0 and isNumber(text_buffer_pt3.v) then
+					if text_buffer_id3.v ~= nil and text_buffer_id3.v ~= "" and tonumber(text_buffer_id3.v) >= 0 and tonumber(text_buffer_id3.v) < 1000 then
+						sampSendChat("/sellgun Shotgun " .. tonumber(text_buffer_pt3.v) .. " " .. ini.GhettoMateConfig.price_Shotgun * tonumber(text_buffer_pt3.v) .. " " .. tonumber(text_buffer_id3.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Себе" .. '##inp34', vec(28,0)) then
+				if text_buffer_pt3.v ~= nil and text_buffer_pt3.v ~= "" and tonumber(text_buffer_pt3.v) > 0 and isNumber(text_buffer_pt3.v) then
+					sampSendChat("/gun Shotgun " .. tonumber(text_buffer_pt3.v))
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("4. Rifle\t", vec(28,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp41', text_buffer_pt4)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp44", imgui.price_Rifle, 0, 500) then
+				ini.GhettoMateConfig.price_Rifle = imgui.price_Rifle.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp42', text_buffer_id4)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp43', vec(28,0)) then
+				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
+					if text_buffer_id4.v ~= nil and text_buffer_id4.v ~= "" and tonumber(text_buffer_id4.v) >= 0 and tonumber(text_buffer_id4.v) < 1000 then
+						sampSendChat("/sellgun Rifle " .. tonumber(text_buffer_pt4.v) .. " " .. ini.GhettoMateConfig.price_Rifle * tonumber(text_buffer_pt4.v) .. " " .. tonumber(text_buffer_id4.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Себе" .. '##inp44', vec(28,0)) then
+				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
+					sampSendChat("/gun Rifle " .. tonumber(text_buffer_pt4.v))	
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/5))
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("5. AK47\t", vec(28,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp51', text_buffer_pt5)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp54", imgui.price_AK47, 0, 500) then
+				ini.GhettoMateConfig.price_AK47 = imgui.price_AK47.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp52', text_buffer_id5)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp53', vec(28,0)) then
+				if text_buffer_pt5.v ~= nil and text_buffer_pt5.v ~= "" and tonumber(text_buffer_pt5.v) > 0 and isNumber(text_buffer_pt5.v) then
+					if text_buffer_id5.v ~= nil and text_buffer_id5.v ~= "" and tonumber(text_buffer_id5.v) >= 0 and tonumber(text_buffer_id5.v) < 1000 then
+						sampSendChat("/sellgun AK47 " .. tonumber(text_buffer_pt5.v) .. " " .. ini.GhettoMateConfig.price_AK47 * tonumber(text_buffer_pt5.v) .. " " .. tonumber(text_buffer_id5.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end	
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Себе" .. '##inp54', vec(28,0)) then
+				if text_buffer_pt5.v ~= nil and text_buffer_pt5.v ~= "" and tonumber(text_buffer_pt5.v) > 0 and isNumber(text_buffer_pt5.v) then
+					sampSendChat("/gun AK47 " .. tonumber(text_buffer_pt5.v))
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("6. SDpistol\t", vec(28,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp61', text_buffer_pt6)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp64", imgui.price_SDpistol, 0, 500) then
+				ini.GhettoMateConfig.price_SDpistol = imgui.price_SDpistol.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp62', text_buffer_id6)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp63', vec(28,0)) then
+				if text_buffer_pt6.v ~= nil and text_buffer_pt6.v ~= "" and tonumber(text_buffer_pt6.v) > 0 and isNumber(text_buffer_pt6.v) then
+					if text_buffer_id6.v ~= nil and text_buffer_id6.v ~= "" and tonumber(text_buffer_id6.v) >= 0 and tonumber(text_buffer_id6.v) < 1000 then
+						sampSendChat("/sellgun SDpistol " .. tonumber(text_buffer_pt6.v) .. " " .. ini.GhettoMateConfig.price_SDpistol * tonumber(text_buffer_pt6.v) .. " " .. tonumber(text_buffer_id6.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end	
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Себе" .. '##inp64', vec(28,0)) then
+				if text_buffer_id6.v ~= nil and text_buffer_id6.v ~= "" and tonumber(text_buffer_id6.v) >= 0 and tonumber(text_buffer_id6.v) < 1000 then
+					sampSendChat("/gun SDpistol " .. tonumber(text_buffer_pt6.v))
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. tonumber(ini.GhettoMateConfig.my_mats)/1)
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("7. SMG\t", vec(28,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp71', text_buffer_pt7)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp74", imgui.price_SMG, 0, 500) then
+				ini.GhettoMateConfig.price_SMG = imgui.price_SMG.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp72', text_buffer_id7)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp73', vec(28,0)) then
+				if text_buffer_pt7.v ~= nil and text_buffer_pt7.v ~= "" and tonumber(text_buffer_pt7.v) > 0 and isNumber(text_buffer_pt7.v) then
+					if text_buffer_id7.v ~= nil and text_buffer_id7.v ~= "" and tonumber(text_buffer_id7.v) >= 0 and tonumber(text_buffer_id7.v) < 1000 then
+						sampSendChat("/sellgun SMG " .. tonumber(text_buffer_pt7.v) .. " " .. ini.GhettoMateConfig.price_SMG * tonumber(text_buffer_pt7.v) .. " " .. tonumber(text_buffer_id7.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Себе" .. '##inp74', vec(28,0)) then
+				if text_buffer_pt7.v ~= nil and text_buffer_pt7.v ~= "" and tonumber(text_buffer_pt7.v) > 0 and isNumber(text_buffer_pt7.v) then
+					sampSendChat("/gun SMG " .. tonumber(text_buffer_pt7.v))
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/2))
+			
+			imgui.Dummy(vec(3, 0))
+			imgui.SameLine()
+			imgui.Text("8. Нарко\t", vec(28,0))
+			imgui.SameLine(toScreenX(34))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp81', text_buffer_pt8)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(64))
+			imgui.PushItemWidth(toScreenX(165/6))
+			if imgui.SliderInt("##inp84", imgui.price_Drugs, 0, 150) then
+				ini.GhettoMateConfig.price_Drugs = imgui.price_Drugs.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(94))
+			imgui.PushItemWidth(toScreenX(165/6))
+			imgui.InputText('##inp82', text_buffer_id8)
+			imgui.PopItemWidth()
+			imgui.SameLine(toScreenX(124))
+			if imgui.Button("Продать" .. '##inp83', vec(28,0)) then
+				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
+					if text_buffer_id8.v ~= nil and text_buffer_id8.v ~= "" and tonumber(text_buffer_id8.v) >= 0 and tonumber(text_buffer_id8.v) < 1000 then
+						sampSendChat("/selldrugs " .. tonumber(text_buffer_pt8.v) .. " " .. ini.GhettoMateConfig.price_Drugs * tonumber(text_buffer_pt8.v) .. " " .. tonumber(text_buffer_id8.v))
+					else
+						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+					end
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Количество наркотиков должно быть больше нуля", main_color)
+				end	
+			end
+			imgui.SameLine(toScreenX(154))
+			if imgui.Button("Заюзать" .. '##inp84', vec(28,0)) then
+				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
+					sampSendChat("/usedrugs " .. text_buffer_pt8.v)
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Количество наркотиков должно быть больше нуля", main_color)
+				end
+			end
+			imgui.SameLine(toScreenX(184))
+			imgui.Text("" .. tonumber(ini.GhettoMateConfig.my_drugs)/1)
+			imgui.Separator()
+			
+			--setcursorpos --ini[GunList]
+			imgui.SetCursorPos(vec(10, 128))
+			if imgui.Button("Сделать", vec(28,0)) then
+				GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
+			end
+			imgui.SetCursorPos(vec(40, 115))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.Combo("##Combo1", combo_select1, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
+				ini.GunList.gun1 = combo_select1.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine()
+			imgui.PushItemWidth(toScreenX(165/5))
+			if imgui.InputInt("##InputInt1", imgui.pt1, 1, 1) then
+				if imgui.pt1.v ~= nil and imgui.pt1.v ~= "" and imgui.pt1.v >= 0 then
+					ini[GunList].pt1 = imgui.pt1.v
+					inicfg.save(ini, directIni)
+				end
+			end
+			imgui.SameLine()
+			if combo_select1.v == 0 then
+				mats1 = imgui.pt1.v * 3
+				imgui.Text("" .. mats1)
+			end
+			if combo_select1.v == 1 then
+				mats1 = imgui.pt1.v * 3
+				imgui.Text("" .. mats1)
+			end
+			if combo_select1.v == 2 then
+				mats1 = imgui.pt1.v * 3
+				imgui.Text("" .. mats1)
+			end
+			if combo_select1.v == 5 then
+				mats1 = imgui.pt1.v * 3
+				imgui.Text("" .. mats1)
+			end
+			if combo_select1.v == 3 then
+				mats1 = imgui.pt1.v * 5
+				imgui.Text("" .. mats1)
+			end
+			if combo_select1.v == 4 then
+				mats1 = imgui.pt1.v * 1
+				imgui.Text("" .. mats1)
+			end
+			if combo_select1.v == 6 then
+				mats1 = imgui.pt1.v * 2
+				imgui.Text("" .. mats1)
+			end
+			if combo_select1.v == 7 then
+				mats1 = imgui.pt1.v * 0
+				imgui.Text("" .. mats1)
+			end
+			
+			imgui.SetCursorPos(vec(40, 128))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.Combo("##Combo2", combo_select2, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
+				ini.GunList.gun2 = combo_select2.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine()
+			imgui.PushItemWidth(toScreenX(165/5))
+			if imgui.InputInt("##InputInt2", imgui.pt2, 1, 1) then
+				if imgui.pt2.v ~= nil and imgui.pt2.v ~= "" and imgui.pt2.v >= 0 then
+					ini[GunList].pt2 = imgui.pt2.v
+					inicfg.save(ini, directIni)
+				end
+			end
+			imgui.SameLine()
+			if combo_select2.v == 0 then
+				mats2 = imgui.pt2.v * 3
+				imgui.Text("" .. mats2)
+			end
+			if combo_select2.v == 1 then
+				mats2 = imgui.pt2.v * 3
+				imgui.Text("" .. mats2)
+			end
+			if combo_select2.v == 2 then
+				mats2 = imgui.pt2.v * 3
+				imgui.Text("" .. mats2)
+			end
+			if combo_select2.v == 5 then
+				mats2 = imgui.pt2.v * 3
+				imgui.Text("" .. mats2)
+			end
+			if combo_select2.v == 3 then
+				mats2 = imgui.pt2.v * 5
+				imgui.Text("" .. mats2)
+			end
+			if combo_select2.v == 4 then
+				mats2 = imgui.pt2.v * 1
+				imgui.Text("" .. mats2)
+			end
+			if combo_select2.v == 6 then
+				mats2 = imgui.pt2.v * 2
+				imgui.Text("" .. mats2)
+			end
+			if combo_select2.v == 7 then
+				mats2 = imgui.pt2.v * 0
+				imgui.Text("" .. mats1)
+			end
+			
+			imgui.SetCursorPos(vec(40, 141))
+			imgui.PushItemWidth(toScreenX(43))
+			if imgui.Combo("##Combo3", combo_select3, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
+				ini.GunList.gun3 = combo_select3.v
+				inicfg.save(ini, directIni)
+			end
+			imgui.PopItemWidth()
+			imgui.SameLine()
+			imgui.PushItemWidth(toScreenX(165/5))
+			if imgui.InputInt("##InputInt3", imgui.pt3, 1, 1) then
+				if imgui.pt3.v ~= nil and imgui.pt3.v ~= "" and imgui.pt3.v >= 0 then
+					ini[GunList].pt3 = imgui.pt3.v
+					inicfg.save(ini, directIni)
+				end
+			end
+			imgui.SameLine()
+			if combo_select3.v == 0 then
+				mats3 = imgui.pt3.v * 3
+				imgui.Text("" .. mats3)
+			end
+			if combo_select3.v == 1 then
+				mats3 = imgui.pt3.v * 3
+				imgui.Text("" .. mats3)
+			end
+			if combo_select3.v == 2 then
+				mats3 = imgui.pt3.v * 3
+				imgui.Text("" .. mats3)
+			end
+			if combo_select3.v == 5 then
+				mats3 = imgui.pt3.v * 3
+				imgui.Text("" .. mats3)
+			end
+			if combo_select3.v == 3 then
+				mats3 = imgui.pt3.v * 5
+				imgui.Text("" .. mats3)
+			end
+			if combo_select3.v == 4 then
+				mats3 = imgui.pt3.v * 1
+				imgui.Text("" .. mats3)
+			end
+			if combo_select3.v == 6 then
+				mats3 = imgui.pt3.v * 2
+				imgui.Text("" .. mats3)
+			end
+			if combo_select3.v == 7 then
+				mats3 = imgui.pt3.v * 0
+				imgui.Text("" .. mats3)
+			end
+			
+			imgui.SetCursorPos(vec(133, 129.5))
+			imgui.Text("" .. mats1 + mats2 + mats3)
+			
+		elseif imgui.settingsTab == 5 then
+			imgui.Text("Статистика: ")
+			imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [" .. math.floor(ini2[GhettoMateCapture].kill / ini2[GhettoMateCapture].death*100)/100 .. "]")
+			
+			imgui.Text("  ")
+			imgui.Text("Grove убито: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].grove_kill)
+			
+			imgui.Text("Aztecas убито: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].aztecas_kill)
+			
+			imgui.Text("Ballas убито: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].ballas_kill)
+			
+			imgui.Text("Vagos убито: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].vagos_kill)
+			
+			imgui.Text("Rifa убито: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].rifa_kill)
+			
+			imgui.Text("  ")
+			
+			imgui.Text("Убийств с Deagle: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_deagle)
+			
+			imgui.Text("Убийств с M4: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_m4)
+			
+			imgui.Text("Убийств с Shotgun: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_shotgun)
+			
+			imgui.Text("Убийств с Rifle: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_rifle)
+			
+			imgui.Text("Убийств с SDpistol: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_sdpistol)
+			
+			imgui.Text("Убийств с кулака: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_fist)
+			
+			imgui.Text("Убийств с бейсбольной биты: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_bat)
+			
+			imgui.Text("Убийств с остального оружия: ")
+			imgui.SameLine(toScreenX(80))
+			imgui.Text("" .. ini2[GhettoMateCapture].gun_ost)
+			
+		else 
+			if script.update then
+				if imgui.Button("Обновить скрипт", vec(28,0)) then
+					--imgui.Process = false
+					--update()
+					sampAddChatMessage("RABIT", -1)
+				end
+			else
+				imgui.Text("Актуальная версия скрипта")
+			end
+			
+			imgui.SetCursorPos(vec(5, 30))
+			imgui.Text("Список команд:")
+				imgui.BeginChild('List', vec(198, 115), true)
+					imgui.Text("/gm - включить главное меню скрипта")
+					imgui.Text("/lhud - включить Larek HUD")
+					imgui.Text("/mohud - включить MO HUD")
+					imgui.Text("//gun - сделать набор оружия из Seller")
+					imgui.Text("/autogetguns - включить/выключить AutoGetGuns")
+					imgui.Text("/fc [CarName] - поиск машины, без аргумента завершает поиск")
+					imgui.Text("/gfind [id] - поиск игрока")
+					imgui.Text("/drugs - заюзать нарко до фулл хп")
+					imgui.Text("/l [1, 2.. 16] - сообщить в какой ларёк необходимо ехать")
+					imgui.Text("/mo [LS, SF, LV] - сообщить в какой MO необходимо ехать")
+					imgui.Text("/sg [GunName] [PT] [ID] - продать оружие [Цена: PT * Цена за ед.]")
+					imgui.Text("/sd [N] [ID] - продать наркотики [Цена: N * Цена за ед.]")
+				imgui.EndChild()
+		end
+		imgui.EndChild()
+		imgui.End()
+	end
+	
+	if larek_window_state.v then
 		if InterfacePosition == true then 
 			imgui.SetNextWindowPos(imgui.ImVec2(ini[GhettoMateConfig].X, ini[GhettoMateConfig].Y))
 			inicfg.save(ini, directIni)
 		end
-		imgui.SetNextWindowSize(imgui.ImVec2(resX/8.5, resY/20*6.6))
+		imgui.SetNextWindowSize(vec(80, 180))
 		imgui.Begin("Larek HUD", _, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
 		local pos = imgui.GetWindowPos()
 		ini[GhettoMateConfig].X = pos.x
@@ -1635,52 +2214,52 @@ function imgui.OnDrawFrame()
 		end	
 		
 		imgui.TextColoredRGB(u8"1.  " .. ini[GhettoMateName].Name1)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[1] .. ini3[GhettoMateTime].time1)
 		imgui.TextColoredRGB(u8"2.  " .. ini[GhettoMateName].Name2)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8""  .. color[2] .. ini3[GhettoMateTime].time2)	
 		imgui.TextColoredRGB(u8"3.  " .. ini[GhettoMateName].Name3)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[3] .. ini3[GhettoMateTime].time3)
 		imgui.TextColoredRGB(u8"4.  " .. ini[GhettoMateName].Name4)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[4] .. ini3[GhettoMateTime].time4)
 		imgui.TextColoredRGB(u8"5.  " .. ini[GhettoMateName].Name5)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[5] .. ini3[GhettoMateTime].time5)
 		imgui.TextColoredRGB(u8"6.  " .. ini[GhettoMateName].Name6)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[6] .. ini3[GhettoMateTime].time6)	
 		imgui.TextColoredRGB(u8"7.  " .. ini[GhettoMateName].Name7)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[7] .. ini3[GhettoMateTime].time7)	
 		imgui.TextColoredRGB(u8"8.  " .. ini[GhettoMateName].Name8)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[8] .. ini3[GhettoMateTime].time8)
 		imgui.TextColoredRGB(u8"9.  " .. ini[GhettoMateName].Name9)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[9] .. ini3[GhettoMateTime].time9)
 		imgui.TextColoredRGB(u8"10. " .. ini[GhettoMateName].Name10)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[10] .. ini3[GhettoMateTime].time10)
 		imgui.TextColoredRGB(u8"11. " .. ini[GhettoMateName].Name11)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[11] .. ini3[GhettoMateTime].time11)
 		imgui.TextColoredRGB(u8"12. " .. ini[GhettoMateName].Name12)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[12] .. ini3[GhettoMateTime].time12)	
 		imgui.TextColoredRGB(u8"13. " .. ini[GhettoMateName].Name13)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[13] .. ini3[GhettoMateTime].time13)
 		imgui.TextColoredRGB(u8"14. " .. ini[GhettoMateName].Name14)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[14] .. ini3[GhettoMateTime].time14)
 		imgui.TextColoredRGB(u8"15. " .. ini[GhettoMateName].Name15)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[15] .. ini3[GhettoMateTime].time15)
 		imgui.TextColoredRGB(u8"16. " .. ini[GhettoMateName].Name16)
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[16] .. ini3[GhettoMateTime].time16)	
 		imgui.Separator()
 		imgui.TextColoredRGB(u8:decode"Денег награблено: " .. ini2[GhettoMateMoney].money)
@@ -1688,7 +2267,7 @@ function imgui.OnDrawFrame()
 		imgui.End()
 	end
 	
-	if secondary_window_state.v then
+	if mo_window_state.v then
 		if ini[GhettoMateConfig].X_MO == nil then
 			ini[GhettoMateConfig].X_MO = 0
 		end
@@ -1699,7 +2278,7 @@ function imgui.OnDrawFrame()
 			imgui.SetNextWindowPos(imgui.ImVec2(ini[GhettoMateConfig].X_MO, ini[GhettoMateConfig].Y_MO))
 			inicfg.save(ini, directIni)
 		end
-		imgui.SetNextWindowSize(imgui.ImVec2(resX/8.5, resY/8.5))
+		imgui.SetNextWindowSize(vec(80, 63))
 		imgui.Begin("MO HUD", _, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
 		local pos_MO = imgui.GetWindowPos()
 		ini[GhettoMateConfig].X_MO = pos_MO.x
@@ -1735,13 +2314,13 @@ function imgui.OnDrawFrame()
 		end
 		
 		imgui.TextColoredRGB(u8"1.  MO LS")
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
 		imgui.TextColoredRGB(u8"2.  MO SF")
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
 		imgui.TextColoredRGB(u8"3.  MO LV")
-			imgui.SameLine((resX/5) / 3)
+			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
 		imgui.Separator()
 		imgui.TextColoredRGB(u8:decode"Материалов привезено: " .. ini2[GhettoMateMO].mats)
@@ -1784,36 +2363,76 @@ function DrugsWaiting()
 	if ini4[GhettoMateSettings].Sounds then
 		soundManager.playSound("message_news")
 	end
+	Use = true
 end
 
 function UseDrugsWaiting(DrugsCount)
-	wait(1200)
+	wait(600)
 	sampSendChat("/usedrugs " .. DrugsCount)
+end
+
+function GunWaiting(gun1, gun2, gun3, pt1, pt2, pt3)
+	if gun1 == 0 then gun1 = "deagle" end
+	if gun1 == 1 then gun1 = "m4" end
+	if gun1 == 2 then gun1 = "shotgun" end
+	if gun1 == 3 then gun1 = "rifle" end
+	if gun1 == 4 then gun1 = "sdpistol" end
+	if gun1 == 5 then gun1 = "ak47" end
+	if gun1 == 6 then gun1 = "smg" end
+	
+	if gun2 == 0 then gun2 = "deagle" end
+	if gun2 == 1 then gun2 = "m4" end
+	if gun2 == 2 then gun2 = "shotgun" end
+	if gun2 == 3 then gun2 = "rifle" end
+	if gun2 == 4 then gun2 = "sdpistol" end
+	if gun2 == 5 then gun2 = "ak47" end
+	if gun2 == 6 then gun2 = "smg" end
+	
+	if gun3 == 0 then gun3 = "deagle" end
+	if gun3 == 1 then gun3 = "m4" end
+	if gun3 == 2 then gun3 = "shotgun" end
+	if gun3 == 3 then gun3 = "rifle" end
+	if gun3 == 4 then gun3 = "sdpistol" end
+	if gun3 == 5 then gun3 = "ak47" end
+	if gun3 == 6 then gun3 = "smg" end
+	
+	if gun1 ~= 7 then
+		wait(600)
+		sampSendChat("/gun " .. gun1 .. " " .. pt1)
+	end
+	if gun2 ~= 7 then
+		wait(600)
+		sampSendChat("/gun " .. gun2 .. " " .. pt2)
+	end
+	if gun2 ~= 7 then
+		wait(600)
+		sampSendChat("/gun " .. gun3 .. " " .. pt3)
+	end
 end
 
 function MONotifyWaiting()
 	if ini3[TimeMO].time1 ~= u8:decode"Неизвестно" then
 		wait(1200)
 		if ini3[SecondsMO].time1 - totalSeconds > 0 then
-			sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Нельзя]")
+			sampSendChat(u8:decode"/f MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Нельзя]")
 		else
-			sampSendChat(u8:decode"/fs MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Можно]")
+			sampSendChat(u8:decode"/f MO LS даёт в " .. ini3[TimeMO].time1 .. u8:decode" [Можно]")
 		end
 	end
 	if ini3[TimeMO].time2 ~= u8:decode"Неизвестно" then
 		wait(1200)
 		if ini3[SecondsMO].time2 - totalSeconds > 0 then
-			sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Нельзя]")
+			sampSendChat(u8:decode"/f MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Нельзя]")
 		else
-			sampSendChat(u8:decode"/fs MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Можно]")
+			sampSendChat(u8:decode"/f MO SF даёт в " .. ini3[TimeMO].time2 .. u8:decode" [Можно]")
 		end
 	end
 	if ini3[TimeMO].time3 ~= u8:decode"Неизвестно" then
 		wait(1200)
 		if ini3[SecondsMO].time3 - totalSeconds > 0 then
-			sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Нельзя]")
+			sampSendChat(u8:decode"/f MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Нельзя]")
 		else
-			sampSendChat(u8:decode"/fs MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Можно]")
+			sampSendChat(u8:decode"/f MO LV даёт в " .. ini3[TimeMO].time3 .. u8:decode" [Можно]")
 		end
 	end
 end
@@ -2244,361 +2863,6 @@ function RefreshMO()
 		ini3[SecondsMO].time3 = 0
 		ini3[TimeMO].time3 = u8:decode"Неизвестно"
 		color[3] = "{808080}"
-	end
-end
-
-function ShowDialog(int, dtext, dinput, string_or_number, ini1, ini2)
-	d = {}
-	d[1], d[2], d[3], d[4], d[5], d[6] = int, dtext, dinput, string_or_number, ini1, ini2
-	
-	if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
-		color[1] = "{808080}"
-	else
-		if timerM[1] == 1 then
-			color[1] = "{d10000}"
-		else
-			color[1] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then
-		color[2] = "{808080}"
-	else
-		if timerM[2] == 1 then
-			color[2] = "{d10000}"
-		else
-			color[2] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then
-		color[3] = "{808080}"
-	else
-		if timerM[3] == 1 then
-			color[3] = "{d10000}"
-		else
-			color[3] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then
-		color[4] = "{808080}"
-	else
-		if timerM[4] == 1 then
-			color[4] = "{d10000}"
-		else
-			color[4] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then
-		color[5] = "{808080}"
-	else
-		if timerM[5] == 1 then
-			color[5] = "{d10000}"
-		else
-			color[5] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then
-		color[6] = "{808080}"
-	else
-		if timerM[6] == 1 then
-			color[6] = "{d10000}"
-		else
-			color[6] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then
-		color[7] = "{808080}"
-	else
-		if timerM[7] == 1 then
-			color[7] = "{d10000}"
-		else
-			color[7] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then
-		color[8] = "{808080}"
-	else
-		if timerM[8] == 1 then
-			color[8] = "{d10000}"
-		else
-			color[8] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then
-		color[9] = "{808080}"
-	else
-		if timerM[9] == 1 then
-			color[9] = "{d10000}"
-		else
-			color[9] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then
-		color[10] = "{808080}"
-	else
-		if timerM[10] == 1 then
-			color[10] = "{d10000}"
-		else
-			color[10] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then
-		color[11] = "{808080}"
-	else
-		if timerM[11] == 1 then
-			color[11] = "{d10000}"
-		else
-			color[11] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then
-		color[12] = "{808080}"
-	else
-		if timerM[12] == 1 then
-			color[12] = "{d10000}"
-		else
-			color[12] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then
-		color[13] = "{808080}"
-	else
-		if timerM[13] == 1 then
-			color[13] = "{d10000}"
-		else
-			color[13] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then
-		color[14] = "{808080}"
-	else
-		if timerM[14] == 1 then
-			color[14] = "{d10000}"
-		else
-			color[14] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then
-		color[15] = "{808080}"
-	else
-		if timerM[15] == 1 then
-			color[15] = "{d10000}"
-		else
-			color[15] = "{06940f}"
-		end
-	end
-	if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then
-		color[16] = "{808080}"
-	else
-		if timerM[16] == 1 then
-			color[16] = "{d10000}"
-		else
-			color[16] = "{06940f}"
-		end
-	end
-		if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
-			colorMO[1] = "{808080}"
-		else
-			if timerMO[1] == 1 then
-				colorMO[1] = "{d10000}"
-			else
-				colorMO[1] = "{06940f}"
-			end
-		end
-		if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
-			colorMO[2] = "{808080}"
-		else
-			if timerMO[2] == 1 then
-				colorMO[2] = "{d10000}"
-			else
-				colorMO[2] = "{06940f}"
-			end
-		end
-		if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
-			colorMO[3] = "{808080}"
-		else
-			if timerMO[3] == 1 then
-				colorMO[3] = "{d10000}"
-			else
-				colorMO[3] = "{06940f}"
-			end
-		end
-	
-	if int == 20 then 
-		dialogLine, dialogTextToList = {}, {}
-		dialogLine[#dialogLine + 1] = '  1. Larek\t'
-		dialogLine[#dialogLine + 1] = '  2. MO\t'
-		dialogLine[#dialogLine + 1] = '  3. AutoGetGuns\t' .. (GetGuns and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = '  4. Find\t' .. (Find and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = '  5. Ugonyala\t' .. (search and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = '  6. Capture\t'
-		dialogLine[#dialogLine + 1] = u8:decode'> Настройки\t'
-		dialogLine[#dialogLine + 1] = u8:decode'> Помощь\t'
-		
-		local text = ""
-		for k,v in pairs(dialogLine) do
-			text = text..v.."\n"
-		end
-		sampShowDialog(1000, u8:decode'GhettoMate: Список', text, u8:decode"Выбрать", u8:decode"Выход", 4)
-	end
-	
-	if int == 21 then
-		sampShowDialog(1001, u8:decode"Sucher", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	
-	if int == 22 then
-		sampShowDialog(1002, u8:decode"Ugonyala", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-
-	if int == 23 then 
-		dialogLine, dialogTextToList = {}, {}
-		dialogLine[#dialogLine + 1] = u8:decode'  1. Уведомления от Larek\t' .. (ini4[GhettoMateSettings].NotifyLarek and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  2. Таймер уведомлений от Larek\t' .. ini4[GhettoMateSettings].TimerNotifyLarek
-		dialogLine[#dialogLine + 1] = u8:decode'  3. Уведомления от Ugonyala\t' .. (ini4[GhettoMateSettings].NotifyUgonyala and '{06940f}ON' or '{d10000}OFF') 
-		dialogLine[#dialogLine + 1] = u8:decode'  4. Анимация угона\t' .. (ini4[GhettoMateSettings].AnimUgonyala and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  5. Выбрать анимацию угона\t' .. ini4[GhettoMateSettings].IdAnimUgonyala
-		dialogLine[#dialogLine + 1] = u8:decode'  6. Уведомления от Find\t' .. (ini4[GhettoMateSettings].NotifyFind and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  7. Максимальное количество ХП\t' .. ini4[GhettoMateSettings].Health
-		dialogLine[#dialogLine + 1] = u8:decode'  8. Уведомления от Drugs\t' .. (ini4[GhettoMateSettings].NotifyDrugs and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'  9. Уведомления от AutoGetGuns\t' .. (ini4[GhettoMateSettings].NotifyAutoGetGuns and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode' 10. Уведомления от MO\t'  .. (ini4[GhettoMateSettings].NotifyMO and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode' 11. Таймер уведомлений от MO\t' .. ini4[GhettoMateSettings].TimerNotifyMO
-		dialogLine[#dialogLine + 1] = u8:decode' 12. Звуки\t' .. (ini4[GhettoMateSettings].Sounds and '{06940f}ON' or '{d10000}OFF')	
-		dialogLine[#dialogLine + 1] = u8:decode' 13. Уведомления от Capture\t'  .. (ini4[GhettoMateSettings].NotifyCapture and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = ' 14. ' .. (script.update and u8:decode'{d10000}Обновить скрипт' or u8:decode'{06940f}Актуальная версия')
-		
-		local text3 = ""
-		for k,v in pairs(dialogLine) do
-			text3 = text3..v.."\n"
-		end
-		sampShowDialog(1003, u8:decode'Настройки', text3, u8:decode"Выбрать", u8:decode"Назад", 4)
-	end
-	if int == 24 then
-		sampShowDialog(1004, u8:decode"Таймер", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	
-	if int == 25 then
-		sampShowDialog(1005, u8:decode"Анимация", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	
-	if int == 26 then
-		sampShowDialog(1006, u8:decode"Таймер", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	
-	if int == 27 then
-		sampShowDialog(1007, u8:decode"Количество ХП", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-		
-	if int == 1 then
-		dialogLine, dialogTextToList = {}, {}
-		dialogLine[#dialogLine + 1] = '  1. ' .. ini[GhettoMateName].Name1  .. '\t' .. color[1]  .. ini3[GhettoMateTime].time1
-		dialogLine[#dialogLine + 1] = '  2. ' .. ini[GhettoMateName].Name2  .. '\t' .. color[2]  .. ini3[GhettoMateTime].time2
-		dialogLine[#dialogLine + 1] = '  3. ' .. ini[GhettoMateName].Name3  .. '\t' .. color[3]  .. ini3[GhettoMateTime].time3
-		dialogLine[#dialogLine + 1] = '  4. ' .. ini[GhettoMateName].Name4  .. '\t' .. color[4]  .. ini3[GhettoMateTime].time4
-		dialogLine[#dialogLine + 1] = '  5. ' .. ini[GhettoMateName].Name5  .. '\t' .. color[5]  .. ini3[GhettoMateTime].time5
-		dialogLine[#dialogLine + 1] = '  6. ' .. ini[GhettoMateName].Name6  .. '\t' .. color[6]  .. ini3[GhettoMateTime].time6
-		dialogLine[#dialogLine + 1] = '  7. ' .. ini[GhettoMateName].Name7  .. '\t' .. color[7]  .. ini3[GhettoMateTime].time7
-		dialogLine[#dialogLine + 1] = '  8. ' .. ini[GhettoMateName].Name8  .. '\t' .. color[8]  .. ini3[GhettoMateTime].time8
-		dialogLine[#dialogLine + 1] = '  9. ' .. ini[GhettoMateName].Name9  .. '\t' .. color[9]  .. ini3[GhettoMateTime].time9
-		dialogLine[#dialogLine + 1] = ' 10. ' .. ini[GhettoMateName].Name10 .. '\t' .. color[10] .. ini3[GhettoMateTime].time10
-		dialogLine[#dialogLine + 1] = ' 11. ' .. ini[GhettoMateName].Name11 .. '\t' .. color[11] .. ini3[GhettoMateTime].time11
-		dialogLine[#dialogLine + 1] = ' 12. ' .. ini[GhettoMateName].Name12 .. '\t' .. color[12] .. ini3[GhettoMateTime].time12
-		dialogLine[#dialogLine + 1] = ' 13. ' .. ini[GhettoMateName].Name13 .. '\t' .. color[13] .. ini3[GhettoMateTime].time13
-		dialogLine[#dialogLine + 1] = ' 14. ' .. ini[GhettoMateName].Name14 .. '\t' .. color[14] .. ini3[GhettoMateTime].time14
-		dialogLine[#dialogLine + 1] = ' 15. ' .. ini[GhettoMateName].Name15 .. '\t' .. color[15] .. ini3[GhettoMateTime].time15
-		dialogLine[#dialogLine + 1] = ' 16. ' .. ini[GhettoMateName].Name16 .. '\t' .. color[16] .. ini3[GhettoMateTime].time16
-		dialogLine[#dialogLine + 1] = u8:decode'> Larek HUD\t' .. (main_window_state.v and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'> Фиксация HUDa\t' .. (InterfacePosition and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'> Разница во времени с Samp-RP\t'
-		dialogLine[#dialogLine + 1] = u8:decode'> Статистика\t'
-
-		local text2 = ""
-		for k,v in pairs(dialogLine) do
-			text2 = text2..v.."\n"
-		end
-		sampShowDialog(1488, u8:decode'Larek: Список', text2, u8:decode"Выбрать", u8:decode"Назад", 4)
-	end
-	if int == 3 then
-		sampShowDialog(1490, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 4 then
-		sampShowDialog(1491, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 5 then
-		sampShowDialog(1492, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 6 then
-		sampShowDialog(1493, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 7 then
-		sampShowDialog(1494, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 8 then
-		sampShowDialog(1495, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 9 then
-		sampShowDialog(1496, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 10 then
-		sampShowDialog(1497, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 11 then
-		sampShowDialog(1498, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 12 then
-		sampShowDialog(1499, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 13 then
-		sampShowDialog(1500, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 14 then
-		sampShowDialog(1501, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 15 then
-		sampShowDialog(1502, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 16 then
-		sampShowDialog(1503, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 17 then
-		sampShowDialog(1504, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 18 then
-		sampShowDialog(1505, u8:decode"Изменение названия", dtext, u8:decode"Выбрать", u8:decode"Назад", 1)
-	end
-	if int == 19 then
-		GhettoMateMoney = string.format('GhettoMateMoney-%s', my_name)
-		ini2 = inicfg.load(GhettoMateMoney, directIni2)
-		sampShowDialog(1506, u8:decode'Статистика', u8:decode"Денег награблено: \t" .. ini2[GhettoMateMoney].money .. u8:decode"\nМагазинов ограблено: \t" .. ini2[GhettoMateMoney].count
-		.. u8:decode"\nОграблений в 2: \t" .. ini2[GhettoMateMoney].count2 .. u8:decode"\nОграблений в 3: \t" .. ini2[GhettoMateMoney].count3 .. u8:decode"\nОграблений в 4: \t" .. ini2[GhettoMateMoney].count4 .. u8:decode"\nОграблений в 1: \t" .. ini2[GhettoMateMoney].count1, u8:decode"Выбрать", u8:decode"Выход", 4)
-	end
-	
-	if int == 170 then
-		dialogLine, dialogTextToList = {}, {}
-		dialogLine[#dialogLine + 1] = '  1. MO LS\t' .. colorMO[1]  .. ini3[TimeMO].time1
-		dialogLine[#dialogLine + 1] = '  2. MO SF\t' .. colorMO[2]  .. ini3[TimeMO].time2
-		dialogLine[#dialogLine + 1] = '  3. MO LV\t' .. colorMO[3]  .. ini3[TimeMO].time3
-		dialogLine[#dialogLine + 1] = '> MO HUD\t' .. (secondary_window_state.v and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'> Фиксация HUDa\t' .. (InterfacePositionMO and '{06940f}ON' or '{d10000}OFF')
-		dialogLine[#dialogLine + 1] = u8:decode'> Сообщить о таймингах\t'
-		dialogLine[#dialogLine + 1] = u8:decode'> Разница во времени с Samp-RP\t'
-		dialogLine[#dialogLine + 1] = u8:decode'> Статистика\t'
-
-		local text4 = ""
-		for k,v in pairs(dialogLine) do
-			text4 = text4..v.."\n"
-		end
-		sampShowDialog(1700, u8:decode'MO: Список', text4, u8:decode"Выбрать", u8:decode"Назад", 4)
-	end
-	
-	if int == 171 then
-		GhettoMateMO = string.format('GhettoMateMO-%s', my_name)
-		ini2 = inicfg.load(GhettoMateMO, directIni2)
-		sampShowDialog(1701, u8:decode'Статистика', u8:decode"Материалов привезено: \t" .. ini2[GhettoMateMO].mats .. u8:decode"\nФур украдено: \t" .. ini2[GhettoMateMO].cars, u8:decode"Выбрать", u8:decode"Выход", 4)
-	end
-	if int == 172 then
-		GhettoMateCapture = string.format('GhettoMateCapture-%s', my_name)
-		ini2 = inicfg.load(GhettoMateCapture, directIni2)
-		sampShowDialog(1702, u8:decode'Статистика', u8:decode"Убийств: \t" .. ini2[GhettoMateCapture].kill .. u8:decode"\nСмертей: \t" .. ini2[GhettoMateCapture].death .. u8:decode"\nКД: \t" .. math.floor(ini2[GhettoMateCapture].kill / ini2[GhettoMateCapture].death*100)/100 .. u8:decode"\nGrove убито: \t" .. ini2[GhettoMateCapture].grove_kill .. u8:decode"\nAztecas убито: \t" .. ini2[GhettoMateCapture].aztecas_kill .. u8:decode"\nBallas убито: \t" .. ini2[GhettoMateCapture].ballas_kill .. u8:decode"\nVagos убито: \t" .. ini2[GhettoMateCapture].vagos_kill .. u8:decode"\nRifa убито: \t" .. ini2[GhettoMateCapture].rifa_kill .. u8:decode"\nУбийств с Deagle: \t" .. ini2[GhettoMateCapture].gun_deagle .. u8:decode"\nУбийств с M4: \t" .. ini2[GhettoMateCapture].gun_m4  .. u8:decode"\nУбийств с Rifle: \t" .. ini2[GhettoMateCapture].gun_rifle .. u8:decode"\nУбийств с Shotgun: \t" .. ini2[GhettoMateCapture].gun_shotgun .. u8:decode"\nУбийств с SDpistol: \t" .. ini2[GhettoMateCapture].gun_sdpistol .. u8:decode"\nУбийств с кулака: \t" .. ini2[GhettoMateCapture].gun_fist .. u8:decode"\nУбийств с бейсбольной биты: \t" .. ini2[GhettoMateCapture].gun_bat .. u8:decode"\nУбийств с остального оружия: \t" .. ini2[GhettoMateCapture].gun_ost, u8:decode"Выбрать", u8:decode"Выход", 4)
 	end
 end
 
@@ -3120,12 +3384,35 @@ function sampev.onServerMessage(color, text)
 	-- DRUGS --
 	if ini4[GhettoMateSettings].NotifyDrugs then
 		if string.find(text, u8:decode"(( Здоровье пополнено до: .+ ))") or string.find(text, u8:decode"(( Остаток: .+ грамм ))") then
+			Use = false
 			DrugsWait:run()
 		end
 	end
 	if string.find(text, u8:decode"Недостаточно наркотиков") and DrugsCount > 0 then
 		DrugsCount = DrugsCount - 1
 		UseDrugsWait:run(DrugsCount)
+	end
+	
+	if string.find(text,  u8:decode" Остаток: .+ грамм") then
+		ini.GhettoMateConfig.my_drugs = string.match(text, u8:decode" Остаток: (.+) грамм")
+		UseDrugsTimer = os.clock() + 60
+		inicfg.save(ini, directIni)
+	end
+	if string.find(text, u8:decode"Остаток: .+ материалов") then
+		ini.GhettoMateConfig.my_mats = string.match(text, u8:decode"Остаток: (.+) материалов")
+		inicfg.save(ini, directIni)
+	end
+	if string.find(text, u8:decode"У вас 500/500 материалов с собой") then
+		ini.GhettoMateConfig.my_mats = 500
+		inicfg.save(ini, directIni)
+	end
+	if string.find(text, u8:decode"У вас 600/600 материалов с собой") then
+		ini.GhettoMateConfig.my_mats = 600
+		inicfg.save(ini, directIni)
+	end
+	if string.find(text, u8:decode"У вас 800/800 материалов с собой") then
+		ini.GhettoMateConfig.my_mats = 800
+		inicfg.save(ini, directIni)
 	end
 end
 
@@ -3160,6 +3447,7 @@ function sampev.onDisplayGameText(style, time, text)
 		if string.find(text, "%d:%d") then
 			ServerHour = string.match(text, "(%d+):")
 			ini[GhettoMateConfig].time = ServerHour - hour2
+			ini[GhettoMateConfig].timeCalibration = true
 			inicfg.save(ini, directIni)
 		end
 		CalibrationA = false
@@ -3630,6 +3918,47 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 	end
+	
+	if args[1] == '/sg' then -- command
+		if args[2] == 'deagle' or args[2] == 'sdpistol' or args[2] == 'rifle' or args[2] == 'shotgun' or args[2] == 'smg' or args[2] == 'ak47' or args[2] == 'm4' then -- gun
+			if args[3] ~= nil and args[3] ~= "" and tonumber(args[3]) > 0 and isNumber(args[3]) then -- pt
+				if args[4] ~= nil and args[4] ~= "" and tonumber(args[4]) >= 0 and tonumber(args[4]) < 1000 then --id player
+					if args[2] == 'deagle' then price_gun = ini.GhettoMateConfig.price_Deagle end
+					if args[2] == 'm4' then price_gun = ini.GhettoMateConfig.price_M4 end
+					if args[2] == 'sdpistol' then price_gun = ini.GhettoMateConfig.price_SDpistol end
+					if args[2] == 'rifle' then price_gun = ini.GhettoMateConfig.price_Rifle end
+					if args[2] == 'shotgun' then price_gun = ini.GhettoMateConfig.price_Shotgun end
+					if args[2] == 'ak47' then price_gun = ini.GhettoMateConfig.price_AK47 end
+					if args[2] == 'smg' then price_gun = ini.GhettoMateConfig.price_SMG end
+					sampSendChat("/sellgun " .. args[2] .. " " .. args[3] .. " " .. tonumber(args[3]) * tonumber(price_gun) .. " " .. args[4])
+				else
+					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
+				end
+
+			else
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше 0", main_color)
+			end
+		else
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Неверно выбрано оружие", main_color)
+		end
+	end
+	
+	if args[1] == '/sd' then
+		if args[2] ~= nil and args[2] ~= "" and tonumber(args[2]) > 0 and isNumber(args[2]) then -- pt
+			if args[3] ~= nil and args[3] ~= "" and tonumber(args[3]) >= 0 and tonumber(args[3]) < 1000 then --id player
+				sampSendChat("/selldrugs " .. args[3] .. " " .. args[2] .. " " .. tonumber(args[2]) * tonumber(ini.GhettoMateConfig.price_Drugs))
+			end
+		end
+	end
+	
+	if args[1] == '//gun' then
+		GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
+	end
+	
+end
+
+function isNumber(n)
+    return #n > 0 and n:match("[^%d]") == nil or n:match("-[^%d]") == nil
 end
 
 function cmd_usedrugs()
@@ -3861,3 +4190,48 @@ function getweaponname(weapon) -- getweaponname by FYP
   return names[weapon]
 end
 
+function AfterDeathReload()
+	if isPlayerDead(playerHandle) then
+		Magaz1  = false
+		Magaz2  = false
+		Magaz3  = false
+		Magaz4  = false
+		Magaz5  = false
+		Magaz6  = false
+		Magaz7  = false
+		Magaz8  = false
+		Magaz9  = false
+		Magaz10 = false
+		Magaz11 = false
+		Magaz12 = false
+		Magaz13 = false
+		Magaz14 = false
+		Magaz15 = false
+		Magaz16 = false
+		MOLS    = false
+		MOSF    = false
+		MOLV    = false
+		Use     = true
+		DrugsWait:terminate()
+	end
+end
+
+function toScreenY(gY)
+    local x, y = convertGameScreenCoordsToWindowScreenCoords(0, gY)
+    return y
+end
+
+function toScreenX(gX)
+    local x, y = convertGameScreenCoordsToWindowScreenCoords(gX, 0)
+    return x
+end
+
+function toScreen(gX, gY)
+    local s = {}
+    s.x, s.y = convertGameScreenCoordsToWindowScreenCoords(gX, gY)
+    return s
+end
+
+function vec(gX, gY)
+    return imgui.ImVec2(convertGameScreenCoordsToWindowScreenCoords(gX, gY))
+end
