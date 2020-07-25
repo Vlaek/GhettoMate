@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('24/07/2020')
-script_version_number(10)
+script_version_number(11)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -605,6 +605,9 @@ function main()
 	end
 	
 	imgui.ApplyCustomStyle()
+	imgui.GetIO().Fonts:Clear()
+	imgui.GetIO().Fonts:AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 17/(1920/getScreenResolution()), nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic())
+	imgui.RebuildFonts()
 	imgui.Process = false
 	
 	while true do
