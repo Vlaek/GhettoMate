@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('24/07/2020')
-script_version_number(10)
+script_version_number(12)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -336,7 +336,7 @@ function main()
 	if not isSampLoaded() or not isSampfuncsLoaded() then return end
 	while not isSampAvailable() do wait(100) end
 	repeat wait(0) until sampGetCurrentServerName() ~= 'SA-MP'
-	repeat 
+	repeat
 		wait(0)
 		for id = 0, 2303 do
 			if sampTextdrawIsExists(id) and sampTextdrawGetString(id):find('Samp%-Rp.Ru') then
@@ -344,7 +344,7 @@ function main()
 			end
 		end
 	until samp_rp ~= nil
-	_, my_id = sampGetPlayerIdByCharHandle(PLAYER_PED) 
+	_, my_id = sampGetPlayerIdByCharHandle(PLAYER_PED)
 	my_name = sampGetPlayerNickname(my_id)
 	server = sampGetCurrentServerName():gsub('|', '')
 	server = (server:find('02') and 'Two' or (server:find('Revolution') and 'Revolution' or (server:find('Legacy') and 'Legacy' or (server:find('Classic') and 'Classic' or ''))))
@@ -363,7 +363,7 @@ function main()
 	sampRegisterChatCommand("mohud", cmd_MOhud)
 	sampRegisterChatCommand("gfind", cmd_sucher)
 	sampRegisterChatCommand("drugs", cmd_usedrugs)
-	
+
 	Wait         = lua_thread.create_suspended(Waiting)
 	MOWait       = lua_thread.create_suspended(MOWaiting)
 	Wait2        = lua_thread.create_suspended(Waiting2)
@@ -372,13 +372,13 @@ function main()
 	UseDrugsWait = lua_thread.create_suspended(UseDrugsWaiting)
 	MONotifyWait = lua_thread.create_suspended(MONotifyWaiting)
 	GunWait      = lua_thread.create_suspended(GunWaiting)
-	
+
 	soundManager.loadSound("message_sms")
 	soundManager.loadSound("message_news")
 	soundManager.loadSound("message_tip")
 	soundManager.loadSound("message_alarm")
 	soundManager.loadSound("message_sos")
-	
+
 	GhettoMateName = string.format('GhettoMateName')
 	if ini[GhettoMateName] == nil then
 		ini = inicfg.load({
@@ -403,7 +403,7 @@ function main()
 		}, directIni)
 		inicfg.save(ini, directIni)
 	end
-	
+
 	GhettoMateConfig = string.format('GhettoMateConfig')
 	if ini[GhettoMateConfig] == nil then
 		ini = inicfg.load({
@@ -428,7 +428,7 @@ function main()
 		}, directIni)
 		inicfg.save(ini, directIni)
 	end
-	
+
 	GunList = string.format('GunList')
 	if ini[GunList] == nil then
 		ini = inicfg.load({
@@ -443,7 +443,7 @@ function main()
 		}, directIni)
 		inicfg.save(ini, directIni)
 	end
-	
+
 	GhettoMateMoney = string.format('GhettoMateMoney')
 	if ini2[GhettoMateMoney] == nil then
 		ini2 = inicfg.load({
@@ -458,7 +458,7 @@ function main()
 		}, directIni2)
 		inicfg.save(ini2, directIni2)
 	end
-	
+
 	GhettoMateMO = string.format('GhettoMateMO')
 	if ini2[GhettoMateMO] == nil then
 		ini2 = inicfg.load({
@@ -469,7 +469,7 @@ function main()
 		}, directIni2)
 		inicfg.save(ini2, directIni2)
 	end
-	
+
 	GhettoMateCapture = string.format('GhettoMateCapture')
 	if ini2[GhettoMateCapture] == nil then
 		ini2 = inicfg.load({
@@ -494,7 +494,7 @@ function main()
 		}, directIni2)
 		inicfg.save(ini2, directIni2)
 	end
-	
+
 	GhettoMateTime = string.format('GhettoMateTime')
 	if ini3[GhettoMateTime] == nil then
 		ini3 = inicfg.load({
@@ -519,7 +519,7 @@ function main()
 		}, directIni3)
 		inicfg.save(ini3, directIni3)
 	end
-	
+
 	GhettoMateSeconds = string.format('GhettoMateSeconds')
 	if ini3[GhettoMateSeconds] == nil then
 		ini3 = inicfg.load({
@@ -544,7 +544,7 @@ function main()
 		}, directIni3)
 		inicfg.save(ini3, directIni3)
 	end
-	
+
 	TimeMO = string.format('TimeMO')
 	if ini3[TimeMO] == nil then
 		ini3 = inicfg.load({
@@ -556,7 +556,7 @@ function main()
 		}, directIni3)
 		inicfg.save(ini3, directIni3)
 	end
-	
+
 	SecondsMO = string.format('SecondsMO')
 	if ini3[SecondsMO] == nil then
 		ini3 = inicfg.load({
@@ -568,7 +568,7 @@ function main()
 		}, directIni3)
 		inicfg.save(ini3, directIni3)
 	end
-	
+
 	GhettoMateSettings = string.format('GhettoMateSettings')
 	if ini4[GhettoMateSettings] == nil then
 		ini4 = inicfg.load({
@@ -590,32 +590,32 @@ function main()
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
 	end
-	
+
 	ini = inicfg.load(GhettoMateConfig, directIni)
 	ini2 = inicfg.load(GhettoMateMoney, directIni2)
 	ini3 = inicfg.load(GhettoMateTime, directIni3)
 	ini4 = inicfg.load(GhettoMateSettings, directIni4)
 	imgui.initBuffers()
-	
+
 	checkUpdates()
 	sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Успешно загрузился!", main_color)
-	
+
 	if not ini[GhettoMateConfig].timeCalibration then
 		sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Откалибруйте время в /gm", main_color)
 	end
-	
+
 	imgui.ApplyCustomStyle()
 	imgui.GetIO().Fonts:Clear()
 	imgui.GetIO().Fonts:AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 14/(1600/getScreenResolution()), nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic())
 	imgui.RebuildFonts()
 	imgui.Process = false
-	
+
 	while true do
 		wait(250)
-		
+
 		paused = isGamePaused()
 		imgui.ShowCursor = false
-		
+
 		GhettoMateConfig = string.format('GhettoMateConfig')
 		ini = inicfg.load(GhettoMateConfig, directIni)
 		hour = os.date("%H") + ini[GhettoMateConfig].time
@@ -641,7 +641,7 @@ function main()
 		minute = os.date("%M")
 		second = os.date("%S")
 		totalSeconds = hour * 3600 + minute * 60 + second
-		
+
 		Timer()
 		TimerMO()
 		TimerM()
@@ -649,21 +649,21 @@ function main()
 		Refresh()
 		RefreshMO()
 		AfterDeathReload()
-		
+
 		if isKeyJustPressed(VK_MULTIPLY) then
 			cmd_autogetguns()
 		end
-		
+
 		if isKeyJustPressed(VK_ADD) then
 			cmd_usedrugs()
 		end
-		
+
 		if Find then
 			Suchen()
 		end
-		
+
 		DrugsTimer = UseDrugsTimer - os.clock()
-		
+
 		--UGONYALA--
 		ugtimer = ugontimer - os.clock()
 		charinstream = getAllChars()
@@ -956,7 +956,7 @@ end
 
 function imgui.initBuffers()
 	imgui.settingsTab = 1
-	
+
 	imgui.LarekName1  = imgui.ImBuffer(u8(ini[GhettoMateName].Name1),  256)
 	imgui.LarekName2  = imgui.ImBuffer(u8(ini[GhettoMateName].Name2),  256)
 	imgui.LarekName3  = imgui.ImBuffer(u8(ini[GhettoMateName].Name3),  256)
@@ -973,12 +973,12 @@ function imgui.initBuffers()
 	imgui.LarekName14 = imgui.ImBuffer(u8(ini[GhettoMateName].Name14), 256)
 	imgui.LarekName15 = imgui.ImBuffer(u8(ini[GhettoMateName].Name15), 256)
 	imgui.LarekName16 = imgui.ImBuffer(u8(ini[GhettoMateName].Name16), 256)
-	
+
 	imgui.TimerNotifyMO = imgui.ImInt(ini4[GhettoMateSettings].TimerNotifyMO)
 	imgui.Health = imgui.ImInt(ini4[GhettoMateSettings].Health)
 	imgui.IdAnimUgonyala = imgui.ImInt(ini4[GhettoMateSettings].IdAnimUgonyala)
 	imgui.TimerNotifyLarek = imgui.ImInt(ini4[GhettoMateSettings].TimerNotifyLarek)
-	
+
 	imgui.price_Drugs = imgui.ImInt(ini.GhettoMateConfig.price_Drugs)
 	imgui.price_Deagle = imgui.ImInt(ini.GhettoMateConfig.price_Deagle)
 	imgui.price_M4 = imgui.ImInt(ini.GhettoMateConfig.price_M4)
@@ -987,14 +987,14 @@ function imgui.initBuffers()
 	imgui.price_AK47 = imgui.ImInt(ini.GhettoMateConfig.price_AK47)
 	imgui.price_SMG = imgui.ImInt(ini.GhettoMateConfig.price_SMG)
 	imgui.price_Rifle = imgui.ImInt(ini.GhettoMateConfig.price_Rifle)
-	
+
 	combo_select1 = imgui.ImInt(ini.GunList.gun1)
 	combo_select2 = imgui.ImInt(ini.GunList.gun2)
 	combo_select3 = imgui.ImInt(ini.GunList.gun3)
 	imgui.pt1 = imgui.ImInt(ini.GunList.pt1)
 	imgui.pt2 = imgui.ImInt(ini.GunList.pt2)
 	imgui.pt3 = imgui.ImInt(ini.GunList.pt3)
-	
+
 end
 
 function imgui.OnDrawFrame()
@@ -1040,7 +1040,7 @@ function imgui.OnDrawFrame()
 				end
 			imgui.EndChild()
 		imgui.EndChild()
-		
+
 		imgui.BeginChild('bottom', vec(205, 160), true)
 		if imgui.settingsTab == 1 then
 			imgui.initBuffers()
@@ -1117,7 +1117,7 @@ function imgui.OnDrawFrame()
 				ini4[GhettoMateSettings].NotifyCapture = not ini4[GhettoMateSettings].NotifyCapture
 				inicfg.save(ini4, directIni4)
 			end
-			
+
 			if larek_window_state.v then
 				if imgui.Button("Выключить Larek HUD", vec(55,0)) then
 					cmd_hud()
@@ -1145,7 +1145,7 @@ function imgui.OnDrawFrame()
 					Calibration()
 				end
 			end
-			
+
 			if mo_window_state.v then
 				if imgui.Button("Выключить MO HUD", vec(55,0)) then
 					cmd_MOhud()
@@ -1167,7 +1167,7 @@ function imgui.OnDrawFrame()
 					inicfg.save(ini, directIni)
 				end
 			end
-			
+
 			if not search then
 				imgui.PushItemWidth(toScreenX(55))
 				imgui.InputText(u8"##inp111", text_buffer_car)
@@ -1189,7 +1189,7 @@ function imgui.OnDrawFrame()
 				imgui.SameLine(toScreenX(114))
 				imgui.Text("" .. math.floor(ugtimer))
 			end
-			
+
 			if DrugsTimer > 0 then
 				imgui.SameLine(toScreenX(139))
 				imgui.Text("" .. math.floor(DrugsTimer))
@@ -1204,7 +1204,7 @@ function imgui.OnDrawFrame()
 					cmd_usedrugs()
 				end
 			end
-			
+
 			if not Find then
 				imgui.PushItemWidth(toScreenX(55))
 				imgui.InputText(u8"##inp112", text_buffer_nick)
@@ -1232,7 +1232,7 @@ function imgui.OnDrawFrame()
 					cmd_autogetguns()
 				end
 			end
-			
+
 
 		elseif imgui.settingsTab == 2 then
 			imgui.PushItemWidth(toScreenX(43))
@@ -1260,7 +1260,7 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
 			imgui.TextColoredRGB(u8"" .. color[9] .. ini3[GhettoMateTime].time9)
-			
+
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.InputText('##inp10003', imgui.LarekName2) then
 				if imgui.LarekName2.v ~= nil and imgui.LarekName2.v ~= "" then
@@ -1286,7 +1286,7 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
 			imgui.TextColoredRGB(u8"" .. color[10] .. ini3[GhettoMateTime].time10)
-			
+
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.InputText('##inp10005', imgui.LarekName3) then
 				if imgui.LarekName3.v ~= nil and imgui.LarekName3.v ~= "" then
@@ -1312,7 +1312,7 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
 			imgui.TextColoredRGB(u8"" .. color[11] .. ini3[GhettoMateTime].time11)
-			
+
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.InputText('##inp10007', imgui.LarekName4) then
 				if imgui.LarekName4.v ~= nil and imgui.LarekName4.v ~= "" then
@@ -1338,7 +1338,7 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
 			imgui.TextColoredRGB(u8"" .. color[12] .. ini3[GhettoMateTime].time12)
-			
+
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.InputText('##inp10009', imgui.LarekName5) then
 				if imgui.LarekName5.v ~= nil and imgui.LarekName5.v ~= "" then
@@ -1364,7 +1364,7 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
 			imgui.TextColoredRGB(u8"" .. color[13] .. ini3[GhettoMateTime].time13)
-			
+
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.InputText('##inp100011', imgui.LarekName6) then
 				if imgui.LarekName6.v ~= nil and imgui.LarekName6.v ~= "" then
@@ -1390,7 +1390,7 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
 			imgui.TextColoredRGB(u8"" .. color[14] .. ini3[GhettoMateTime].time14)
-			
+
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.InputText('##inp100013', imgui.LarekName7) then
 				if imgui.LarekName7.v ~= nil and imgui.LarekName7.v ~= "" then
@@ -1415,8 +1415,8 @@ function imgui.OnDrawFrame()
 			end
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
-			imgui.TextColoredRGB(u8"" .. color[15] .. ini3[GhettoMateTime].time15)			
-			
+			imgui.TextColoredRGB(u8"" .. color[15] .. ini3[GhettoMateTime].time15)
+
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.InputText('##inp100015', imgui.LarekName8) then
 				if imgui.LarekName8.v ~= nil and imgui.LarekName8.v ~= "" then
@@ -1442,7 +1442,7 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 				imgui.SameLine(toScreenX(150))
 			imgui.TextColoredRGB(u8"" .. color[16] .. ini3[GhettoMateTime].time16)
-				
+
 			imgui.Separator()
 			imgui.TextColoredRGB(u8:decode"Денег награблено: " .. ini2[GhettoMateMoney].money)
 			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count)
@@ -1450,14 +1450,14 @@ function imgui.OnDrawFrame()
 			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count3)
 			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count4)
 			imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count1)
-			
+
 		elseif imgui.settingsTab == 3 then
 			imgui.TextColoredRGB(u8"1.  MO LS")
 				imgui.SameLine(toScreenX(50))
 			imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
 			imgui.TextColoredRGB(u8"2.  MO SF")
 				imgui.SameLine(toScreenX(50))
-			imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
+			imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)
 			imgui.TextColoredRGB(u8"3.  MO LV")
 				imgui.SameLine(toScreenX(50))
 			imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
@@ -1468,7 +1468,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Сообщить тайминги" .. '##inp13', vec(55,0)) then
 				MONotifyWaiting()
 			end
-			
+
 		elseif imgui.settingsTab == 4 then
 			--imgui.Dummy(vec(165/6, 18))
 			imgui.Dummy(vec(165/6, 0))
@@ -1484,7 +1484,7 @@ function imgui.OnDrawFrame()
 			imgui.Dummy(vec(165/3, 0))
 			imgui.SameLine(toScreenX(153))
 			imgui.Text("Материалов: " .. ini.GhettoMateConfig.my_mats)
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("1. Deagle", vec(25,0))
@@ -1525,7 +1525,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("2. M4", vec(25,0))
@@ -1566,7 +1566,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("3. Shotgun\t", vec(28,0))
@@ -1607,7 +1607,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("4. Rifle\t", vec(28,0))
@@ -1641,14 +1641,14 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp44', vec(28,0)) then
 				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
-					sampSendChat("/gun Rifle " .. tonumber(text_buffer_pt4.v))	
+					sampSendChat("/gun Rifle " .. tonumber(text_buffer_pt4.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
 				end
 			end
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/5))
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("5. AK47\t", vec(28,0))
@@ -1677,7 +1677,7 @@ function imgui.OnDrawFrame()
 					end
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
-				end	
+				end
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp54', vec(28,0)) then
@@ -1689,7 +1689,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("6. SDpistol\t", vec(28,0))
@@ -1718,7 +1718,7 @@ function imgui.OnDrawFrame()
 					end
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
-				end	
+				end
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp64', vec(28,0)) then
@@ -1730,7 +1730,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. tonumber(ini.GhettoMateConfig.my_mats)/1)
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("7. SMG\t", vec(28,0))
@@ -1771,7 +1771,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/2))
-			
+
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
 			imgui.Text("8. Нарко\t", vec(28,0))
@@ -1800,7 +1800,7 @@ function imgui.OnDrawFrame()
 					end
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Количество наркотиков должно быть больше нуля", main_color)
-				end	
+				end
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Заюзать" .. '##inp84', vec(28,0)) then
@@ -1813,8 +1813,8 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(184))
 			imgui.Text("" .. tonumber(ini.GhettoMateConfig.my_drugs)/1)
 			imgui.Separator()
-			
-			
+
+
 			imgui.SetCursorPos(vec(10, 128))
 			if imgui.Button("Сделать", vec(28,0)) then
 				GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
@@ -1867,7 +1867,7 @@ function imgui.OnDrawFrame()
 				mats1 = imgui.pt1.v * 0
 				imgui.Text("" .. mats1)
 			end
-			
+
 			imgui.SetCursorPos(vec(40, 128))
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.Combo("##Combo2", combo_select2, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
@@ -1916,7 +1916,7 @@ function imgui.OnDrawFrame()
 				mats2 = imgui.pt2.v * 0
 				imgui.Text("" .. mats1)
 			end
-			
+
 			imgui.SetCursorPos(vec(40, 141))
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.Combo("##Combo3", combo_select3, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
@@ -1965,79 +1965,79 @@ function imgui.OnDrawFrame()
 				mats3 = imgui.pt3.v * 0
 				imgui.Text("" .. mats3)
 			end
-			
+
 			imgui.SetCursorPos(vec(133, 129.5))
 			imgui.Text("" .. mats1 + mats2 + mats3)
-			
+
 		elseif imgui.settingsTab == 5 then
 			imgui.Text("Статистика: ")
 			imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [" .. math.floor(ini2[GhettoMateCapture].kill / ini2[GhettoMateCapture].death*100)/100 .. "]")
-			
+
 			imgui.Text("  ")
 			imgui.Text("Grove убито: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].grove_kill)
-			
+
 			imgui.Text("Aztecas убито: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].aztecas_kill)
-			
+
 			imgui.Text("Ballas убито: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].ballas_kill)
-			
+
 			imgui.Text("Vagos убито: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].vagos_kill)
-			
+
 			imgui.Text("Rifa убито: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].rifa_kill)
-			
+
 			imgui.Text("  ")
-			
+
 			imgui.Text("Убийств с Deagle: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_deagle)
-			
+
 			imgui.Text("Убийств с M4: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_m4)
-			
+
 			imgui.Text("Убийств с Shotgun: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_shotgun)
-			
+
 			imgui.Text("Убийств с Rifle: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_rifle)
-			
+
 			imgui.Text("Убийств с SDpistol: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_sdpistol)
-			
+
 			imgui.Text("Убийств с кулака: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_fist)
-			
+
 			imgui.Text("Убийств с бейсбольной биты: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_bat)
-			
+
 			imgui.Text("Убийств с остального оружия: ")
 			imgui.SameLine(toScreenX(80))
 			imgui.Text("" .. ini2[GhettoMateCapture].gun_ost)
-			
-		else 
+
+		else
 			if script.update then
-				if imgui.Button("Обновить скрипт", vec(28,0)) then
+				if imgui.Button("Обновить скрипт", vec(55,0)) then
 					imgui.Process = false
 					update()
 				end
 			else
 				imgui.Text("Актуальная версия скрипта")
 			end
-			
+
 			imgui.SetCursorPos(vec(5, 30))
 			imgui.Text("Список команд:")
 				imgui.BeginChild('List', vec(198, 115), true)
@@ -2058,9 +2058,9 @@ function imgui.OnDrawFrame()
 		imgui.EndChild()
 		imgui.End()
 	end
-	
+
 	if larek_window_state.v then
-		if InterfacePosition == true then 
+		if InterfacePosition == true then
 			imgui.SetNextWindowPos(imgui.ImVec2(ini[GhettoMateConfig].X, ini[GhettoMateConfig].Y))
 			inicfg.save(ini, directIni)
 		end
@@ -2070,7 +2070,7 @@ function imgui.OnDrawFrame()
 		ini[GhettoMateConfig].X = pos.x
 		ini[GhettoMateConfig].Y = pos.y
 		inicfg.save(ini, directIni)
-		
+
 		if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
 			color[1] = "{808080}"
 		else
@@ -2214,14 +2214,14 @@ function imgui.OnDrawFrame()
 			else
 				color[16] = "{06940f}"
 			end
-		end	
-		
+		end
+
 		imgui.TextColoredRGB(u8"1.  " .. ini[GhettoMateName].Name1)
 			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[1] .. ini3[GhettoMateTime].time1)
 		imgui.TextColoredRGB(u8"2.  " .. ini[GhettoMateName].Name2)
 			imgui.SameLine(toScreenX(50))
-		imgui.TextColoredRGB(u8""  .. color[2] .. ini3[GhettoMateTime].time2)	
+		imgui.TextColoredRGB(u8""  .. color[2] .. ini3[GhettoMateTime].time2)
 		imgui.TextColoredRGB(u8"3.  " .. ini[GhettoMateName].Name3)
 			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[3] .. ini3[GhettoMateTime].time3)
@@ -2233,10 +2233,10 @@ function imgui.OnDrawFrame()
 		imgui.TextColoredRGB(u8"" .. color[5] .. ini3[GhettoMateTime].time5)
 		imgui.TextColoredRGB(u8"6.  " .. ini[GhettoMateName].Name6)
 			imgui.SameLine(toScreenX(50))
-		imgui.TextColoredRGB(u8"" .. color[6] .. ini3[GhettoMateTime].time6)	
+		imgui.TextColoredRGB(u8"" .. color[6] .. ini3[GhettoMateTime].time6)
 		imgui.TextColoredRGB(u8"7.  " .. ini[GhettoMateName].Name7)
 			imgui.SameLine(toScreenX(50))
-		imgui.TextColoredRGB(u8"" .. color[7] .. ini3[GhettoMateTime].time7)	
+		imgui.TextColoredRGB(u8"" .. color[7] .. ini3[GhettoMateTime].time7)
 		imgui.TextColoredRGB(u8"8.  " .. ini[GhettoMateName].Name8)
 			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[8] .. ini3[GhettoMateTime].time8)
@@ -2251,7 +2251,7 @@ function imgui.OnDrawFrame()
 		imgui.TextColoredRGB(u8"" .. color[11] .. ini3[GhettoMateTime].time11)
 		imgui.TextColoredRGB(u8"12. " .. ini[GhettoMateName].Name12)
 			imgui.SameLine(toScreenX(50))
-		imgui.TextColoredRGB(u8"" .. color[12] .. ini3[GhettoMateTime].time12)	
+		imgui.TextColoredRGB(u8"" .. color[12] .. ini3[GhettoMateTime].time12)
 		imgui.TextColoredRGB(u8"13. " .. ini[GhettoMateName].Name13)
 			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. color[13] .. ini3[GhettoMateTime].time13)
@@ -2263,13 +2263,13 @@ function imgui.OnDrawFrame()
 		imgui.TextColoredRGB(u8"" .. color[15] .. ini3[GhettoMateTime].time15)
 		imgui.TextColoredRGB(u8"16. " .. ini[GhettoMateName].Name16)
 			imgui.SameLine(toScreenX(50))
-		imgui.TextColoredRGB(u8"" .. color[16] .. ini3[GhettoMateTime].time16)	
+		imgui.TextColoredRGB(u8"" .. color[16] .. ini3[GhettoMateTime].time16)
 		imgui.Separator()
 		imgui.TextColoredRGB(u8:decode"Денег награблено: " .. ini2[GhettoMateMoney].money)
 		imgui.TextColoredRGB(u8:decode"Магазинов ограблено: " .. ini2[GhettoMateMoney].count)
 		imgui.End()
 	end
-	
+
 	if mo_window_state.v then
 		if ini[GhettoMateConfig].X_MO == nil then
 			ini[GhettoMateConfig].X_MO = 0
@@ -2287,7 +2287,7 @@ function imgui.OnDrawFrame()
 		ini[GhettoMateConfig].X_MO = pos_MO.x
 		ini[GhettoMateConfig].Y_MO = pos_MO.y
 		inicfg.save(ini, directIni)
-	
+
 		if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
 			colorMO[1] = "{808080}"
 		else
@@ -2315,13 +2315,13 @@ function imgui.OnDrawFrame()
 				colorMO[3] = "{06940f}"
 			end
 		end
-		
+
 		imgui.TextColoredRGB(u8"1.  MO LS")
 			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. colorMO[1] .. ini3[TimeMO].time1)
 		imgui.TextColoredRGB(u8"2.  MO SF")
 			imgui.SameLine(toScreenX(50))
-		imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)	
+		imgui.TextColoredRGB(u8""  .. colorMO[2] .. ini3[TimeMO].time2)
 		imgui.TextColoredRGB(u8"3.  MO LV")
 			imgui.SameLine(toScreenX(50))
 		imgui.TextColoredRGB(u8"" .. colorMO[3] .. ini3[TimeMO].time3)
@@ -2332,28 +2332,28 @@ function imgui.OnDrawFrame()
 	end
 end
 
-function Waiting()        
+function Waiting()
 	if timer == true then
 		wait(10000)
 		timer = false
 	end
 end
 
-function MOWaiting()        
+function MOWaiting()
 	if MOtimer == true then
 		wait(10000)
 		MOtimer = false
 	end
 end
 
-function Waiting2()       
+function Waiting2()
 	if sideTimer == true then
 		wait(1000)
 		sideTimer = false
 	end
 end
 
-function MOWaiting2()       
+function MOWaiting2()
 	if MOsideTimer == true then
 		wait(1000)
 		MOsideTimer = false
@@ -2382,7 +2382,7 @@ function GunWaiting(gun1, gun2, gun3, pt1, pt2, pt3)
 	if gun1 == 4 then gun1 = "sdpistol" end
 	if gun1 == 5 then gun1 = "ak47" end
 	if gun1 == 6 then gun1 = "smg" end
-	
+
 	if gun2 == 0 then gun2 = "deagle" end
 	if gun2 == 1 then gun2 = "m4" end
 	if gun2 == 2 then gun2 = "shotgun" end
@@ -2390,7 +2390,7 @@ function GunWaiting(gun1, gun2, gun3, pt1, pt2, pt3)
 	if gun2 == 4 then gun2 = "sdpistol" end
 	if gun2 == 5 then gun2 = "ak47" end
 	if gun2 == 6 then gun2 = "smg" end
-	
+
 	if gun3 == 0 then gun3 = "deagle" end
 	if gun3 == 1 then gun3 = "m4" end
 	if gun3 == 2 then gun3 = "shotgun" end
@@ -2398,7 +2398,7 @@ function GunWaiting(gun1, gun2, gun3, pt1, pt2, pt3)
 	if gun3 == 4 then gun3 = "sdpistol" end
 	if gun3 == 5 then gun3 = "ak47" end
 	if gun3 == 6 then gun3 = "smg" end
-	
+
 	if gun1 ~= 7 then
 		wait(600)
 		sampSendChat("/gun " .. gun1 .. " " .. pt1)
@@ -3015,97 +3015,97 @@ function sampev.onSendPickedUpPickup(pickupId)
 	if pickupId == 1040 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then  -- вышел
 		Magaz1 = false
 	end
-	if pickupId == 1037 then  
+	if pickupId == 1037 then
 		Magaz2 = true
 	end
-	if pickupId == 1038 or pickupId == 1039 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then  
+	if pickupId == 1038 or pickupId == 1039 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz2 = false
 	end
-	if pickupId == 979 then   
+	if pickupId == 979 then
 		Magaz3 = true
 	end
 	if pickupId == 980 or pickupId == 1039 or pickupId == 1037 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz3 = false
 	end
-	if pickupId == 977 then   
+	if pickupId == 977 then
 		Magaz4 = true
 	end
-	if pickupId == 978 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 978 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz4 = false
 	end
-	if pickupId == 983 then   
+	if pickupId == 983 then
 		Magaz5 = true
 	end
-	if pickupId == 984 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 984 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz5 = false
 	end
-	if pickupId == 1035 then   
+	if pickupId == 1035 then
 		Magaz6 = true
 	end
-	if pickupId == 1036 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 1036 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz6 = false
 	end
-	if pickupId == 987 then  
+	if pickupId == 987 then
 		Magaz7 = true
 	end
-	if pickupId == 988 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 988 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz7 = false
 	end
-	if pickupId == 981 then   
+	if pickupId == 981 then
 		Magaz8 = true
 	end
-	if pickupId == 982 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 982 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz8 = false
 	end
-	if pickupId == 985 then   
+	if pickupId == 985 then
 		Magaz9 = true
 	end
-	if pickupId == 986 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 986 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz9 = false
 	end
-	if pickupId == 1033 then  
+	if pickupId == 1033 then
 		Magaz10 = true
 	end
-	if pickupId == 1034 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 1034 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz10 = false
 	end
-	if pickupId == 1031 then  
+	if pickupId == 1031 then
 		Magaz11 = true
 	end
-	if pickupId == 1032 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 1032 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz11 = false
 	end
-	if pickupId == 1019 then  
+	if pickupId == 1019 then
 		Magaz12 = true
 	end
-	if pickupId == 1020 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 1020 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz12 = false
 	end
-	if pickupId == 1025 then  
+	if pickupId == 1025 then
 		Magaz13 = true
 	end
-	if pickupId == 1026 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 1026 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
 		Magaz13 = false
 	end
-	if pickupId == 1021 then  
+	if pickupId == 1021 then
 		Magaz14 = true
 	end
-	if pickupId == 1022 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1023 or pickupId == 1029 then 
+	if pickupId == 1022 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1023 or pickupId == 1029 then
 		Magaz14 = false
 	end
-	if pickupId == 1023 then  
+	if pickupId == 1023 then
 		Magaz15 = true
 	end
-	if pickupId == 1024 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1029 then 
+	if pickupId == 1024 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1029 then
 		Magaz15 = false
 	end
-	if pickupId == 1029 then   
+	if pickupId == 1029 then
 		Magaz16 = true
 	end
-	if pickupId == 1030 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 then 
+	if pickupId == 1030 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 then
 		Magaz16 = false
 	end
-	
+
 	if pickupId == 1818 then
 		MOLS = true
 	end
@@ -3323,9 +3323,9 @@ function sampev.onServerMessage(color, text)
 		ini2[GhettoMateMO].cars = ini2[GhettoMateMO].cars + 1
 		inicfg.save(ini2, directIni2)
 	end
-	
+
 	-- AUTOGETGUNS--
-	
+
 	if GetGuns and not paused then
 		if string.find(text, u8:decode"открыл(а) склад с оружием", 1, true) then
 			NickSklad = string.match(text, u8:decode"(%S+)")
@@ -3338,18 +3338,18 @@ function sampev.onServerMessage(color, text)
 			end
 		end
 		if string.find(text, u8:decode"Необходимо находиться на своей базе", 1, true) then
-			if ini4[GhettoMateSettings].NotifyAutoGetGuns then 
+			if ini4[GhettoMateSettings].NotifyAutoGetGuns then
 				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}AutoGetGuns: {FF0000}Неудача!", main_color)
 			end
 		end
-	end	
-	
+	end
+
 	--UGONYALA--
-	
+
 	if string.find(text, u8:decode"SMS: Слишком долго. Нам нужны хорошие автоугонщики, а не черепахи") then
 		stopSearch()
 	end
-	
+
 	if string.find(text, u8:decode"SMS: Ты меня огорчил!") then
 		stopSearch()
 	end
@@ -3378,7 +3378,7 @@ function sampev.onServerMessage(color, text)
 			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Метка установлена {FFFF00}" .. thiefPos, main_color)
 		end
 	end
-	
+
 	if ini4[GhettoMateSettings].AnimUgonyala then
 		if string.find(text, u8:decode"SMS: Вот тачка которую мы заказывали.") then
 			sampSendChat("/anim " .. ini4[GhettoMateSettings].IdAnimUgonyala)
@@ -3395,7 +3395,7 @@ function sampev.onServerMessage(color, text)
 		DrugsCount = DrugsCount - 1
 		UseDrugsWait:run(DrugsCount)
 	end
-	
+
 	if string.find(text,  u8:decode" Остаток: .+ грамм") then
 		ini.GhettoMateConfig.my_drugs = string.match(text, u8:decode" Остаток: (.+) грамм")
 		UseDrugsTimer = os.clock() + 60
@@ -3420,7 +3420,7 @@ function sampev.onServerMessage(color, text)
 end
 
 function sampev.onDisplayGameText(style, time, text)
-	if Magaz1 or Magaz2 or Magaz3 or Magaz4 or Magaz5 or Magaz6 or Magaz7 or Magaz8 or Magaz9 or Magaz10 or Magaz11 or Magaz12 or Magaz13 or Magaz14 or Magaz15 or Magaz16 then 
+	if Magaz1 or Magaz2 or Magaz3 or Magaz4 or Magaz5 or Magaz6 or Magaz7 or Magaz8 or Magaz9 or Magaz10 or Magaz11 or Magaz12 or Magaz13 or Magaz14 or Magaz15 or Magaz16 then
 		if string.find(text, "$5000") then
 			ini2[GhettoMateMoney].money  = ini2[GhettoMateMoney].money + 5000
 			ini2[GhettoMateMoney].count  = ini2[GhettoMateMoney].count + 1
@@ -3656,7 +3656,7 @@ function sampev.onSendCommand(cmd)
 					if string.lower(carname) == string.lower(veh[1]) then
 						table.insert(marks, addSpriteBlipForCoord(veh[2], veh[3], veh[4], 55))
 						table.insert(ugcheckpoints, createCheckpoint(1, veh[2], veh[3], veh[4], veh[2], veh[3], veh[4], 1))
-						local _thiefZone = '' 
+						local _thiefZone = ''
 						local _minDist = 100000
 						for k,v in pairs(zone) do
 							local dist = getDistanceBetweenCoords3d(veh[2], veh[3], v.z, v.x, v.y, v.z)
@@ -3702,14 +3702,14 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 	end
-	
+
 	if args[1] == '/autogetguns' then
 		cmd_autogetguns()
 	end
-	
+
 	if args[1] == '/l' then
 		if args[2] == '1' then
-			if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name1)
 			else
 				if ini3[GhettoMateSeconds].time1 - totalSeconds > 0 then
@@ -3720,7 +3720,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '2' then
-			if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name2)
 			else
 				if ini3[GhettoMateSeconds].time2 - totalSeconds > 0 then
@@ -3731,7 +3731,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '3' then
-			if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name3)
 			else
 				if ini3[GhettoMateSeconds].time3 - totalSeconds > 0 then
@@ -3742,7 +3742,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '4' then
-			if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name4)
 			else
 				if ini3[GhettoMateSeconds].time4 - totalSeconds > 0 then
@@ -3753,7 +3753,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '5' then
-			if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name5)
 			else
 				if ini3[GhettoMateSeconds].time5 - totalSeconds > 0 then
@@ -3764,7 +3764,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '6' then
-			if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name6)
 			else
 				if ini3[GhettoMateSeconds].time6 - totalSeconds > 0 then
@@ -3775,7 +3775,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '7' then
-			if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name7)
 			else
 				if ini3[GhettoMateSeconds].time7 - totalSeconds > 0 then
@@ -3786,7 +3786,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '8' then
-			if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name8)
 			else
 				if ini3[GhettoMateSeconds].time8 - totalSeconds > 0 then
@@ -3797,7 +3797,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '9' then
-			if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name9)
 			else
 				if ini3[GhettoMateSeconds].time9 - totalSeconds > 0 then
@@ -3808,7 +3808,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '10' then
-			if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name10)
 			else
 				if ini3[GhettoMateSeconds].time10 - totalSeconds > 0 then
@@ -3819,7 +3819,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '11' then
-			if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name11)
 			else
 				if ini3[GhettoMateSeconds].time11 - totalSeconds > 0 then
@@ -3830,7 +3830,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '12' then
-			if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name12)
 			else
 				if ini3[GhettoMateSeconds].time12 - totalSeconds > 0 then
@@ -3841,7 +3841,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '13' then
-			if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name13)
 			else
 				if ini3[GhettoMateSeconds].time13 - totalSeconds > 0 then
@@ -3852,7 +3852,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '14' then
-			if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name14)
 			else
 				if ini3[GhettoMateSeconds].time14 - totalSeconds > 0 then
@@ -3863,7 +3863,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '15' then
-			if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name15)
 			else
 				if ini3[GhettoMateSeconds].time15 - totalSeconds > 0 then
@@ -3874,7 +3874,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == '16' then
-			if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then 
+			if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в ларёк " .. ini[GhettoMateName].Name16)
 			else
 				if ini3[GhettoMateSeconds].time16 - totalSeconds > 0 then
@@ -3885,10 +3885,10 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 	end
-	
-	if args[1] == '/mo' then 
+
+	if args[1] == '/mo' then
 		if args[2] == 'ls' then
-			if ini3[TimeMO].time1 == u8:decode"Неизвестно" then 
+			if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в MO LS")
 			else
 				if ini3[SecondsMO].time1 - totalSeconds > 0 then
@@ -3899,7 +3899,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == 'sf' then
-			if ini3[TimeMO].time2 == u8:decode"Неизвестно" then 
+			if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в MO SF")
 			else
 				if ini3[SecondsMO].time2 - totalSeconds > 0 then
@@ -3910,7 +3910,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 		if args[2] == 'lv' then
-			if ini3[TimeMO].time3 == u8:decode"Неизвестно" then 
+			if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
 				sampSendChat(u8:decode"Нам нужно ехать в MO LV")
 			else
 				if ini3[SecondsMO].time3 - totalSeconds > 0 then
@@ -3921,7 +3921,7 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 	end
-	
+
 	if args[1] == '/sg' then -- command
 		if args[2] == 'deagle' or args[2] == 'sdpistol' or args[2] == 'rifle' or args[2] == 'shotgun' or args[2] == 'smg' or args[2] == 'ak47' or args[2] == 'm4' then -- gun
 			if args[3] ~= nil and args[3] ~= "" and tonumber(args[3]) > 0 and isNumber(args[3]) then -- pt
@@ -3945,7 +3945,7 @@ function sampev.onSendCommand(cmd)
 			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Неверно выбрано оружие", main_color)
 		end
 	end
-	
+
 	if args[1] == '/sd' then
 		if args[2] ~= nil and args[2] ~= "" and tonumber(args[2]) > 0 and isNumber(args[2]) then -- pt
 			if args[3] ~= nil and args[3] ~= "" and tonumber(args[3]) >= 0 and tonumber(args[3]) < 1000 then --id player
@@ -3953,11 +3953,11 @@ function sampev.onSendCommand(cmd)
 			end
 		end
 	end
-	
+
 	if args[1] == '//gun' then
 		GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
 	end
-	
+
 end
 
 function isNumber(n)
@@ -4046,7 +4046,7 @@ end
 function sampev.onCreateGangZone(zoneId, squareStart, squareEnd, color) --by Serhiy_Rubin
 	if HexColor(color) == '000000' then
 		lua_thread.create(function()
-			local _thiefZone = '' 
+			local _thiefZone = ''
 			local _minDist = 100000
 			local playerDist = 0
 			for k,v in pairs(zone) do
