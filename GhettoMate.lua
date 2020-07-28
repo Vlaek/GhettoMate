@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('24/07/2020')
-script_version_number(12)
+script_version_number(13)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -121,7 +121,6 @@ local text_buffer_pt7 = imgui.ImBuffer(256)
 local text_buffer_id7 = imgui.ImBuffer(256)
 local text_buffer_pt8 = imgui.ImBuffer(256)
 local text_buffer_id8 = imgui.ImBuffer(256)
-
 local text_buffer_nick = imgui.ImBuffer(256)
 local text_buffer_car  = imgui.ImBuffer(256)
 
@@ -409,10 +408,10 @@ function main()
 		ini = inicfg.load({
 			[GhettoMateConfig] = {
 				time            = tonumber(0),
-				X               = tonumber(0),
-				Y               = tonumber(0),
-				X_MO            = tonumber(0),
-				Y_MO            = tonumber(0),
+				X               = tonumber(resX/2),
+				Y               = tonumber(resY/2),
+				X_MO            = tonumber(resX/2),
+				Y_MO            = tonumber(resX/2),
 				timeCalibration = false,
 				price_Deagle    = tonumber(200),
 				price_M4        = tonumber(200),
@@ -489,7 +488,9 @@ function main()
 				gun_shotgun   = tonumber(0),
 				gun_rifle     = tonumber(0),
 				gun_bat       = tonumber(0),
-				gun_ost       = tonumber(0)
+				gun_ost       = tonumber(0),
+				CaptureKill   = tonumber(0),
+				CaptureDeath  = tonumber(0)
 			}
 		}, directIni2)
 		inicfg.save(ini2, directIni2)
@@ -608,13 +609,13 @@ function main()
 	imgui.GetIO().Fonts:Clear()
 	imgui.GetIO().Fonts:AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 14/(1600/getScreenResolution()), nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic())
 	imgui.RebuildFonts()
-	imgui.Process = false
+	imgui.Process = true
 
 	while true do
 		wait(250)
-
-		paused = isGamePaused()
+		
 		imgui.ShowCursor = false
+		paused = isGamePaused()
 
 		GhettoMateConfig = string.format('GhettoMateConfig')
 		ini = inicfg.load(GhettoMateConfig, directIni)
@@ -649,6 +650,8 @@ function main()
 		Refresh()
 		RefreshMO()
 		AfterDeathReload()
+		LarekChecker()
+		MOChecker()
 
 		if isKeyJustPressed(VK_MULTIPLY) then
 			cmd_autogetguns()
@@ -1000,6 +1003,7 @@ end
 function imgui.OnDrawFrame()
 	if main_window_state.v then
 		imgui.ShowCursor = true
+		local resX, resY = getScreenResolution()
 		imgui.SetNextWindowSize(vec(212, 190))
 		imgui.SetNextWindowPos(vec(200, 118), 2)
 		imgui.Begin('GhettoMate ', main_window_state, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
@@ -1141,7 +1145,7 @@ function imgui.OnDrawFrame()
 			end
 			if not ini[GhettoMateConfig].timeCalibration then
 				imgui.SameLine(toScreenX(120))
-				if imgui.Button("Откалибровать время", vec(55,0)) then
+				if imgui.Button("Откалибровать время", vec(60,0)) then
 					Calibration()
 				end
 			end
@@ -1505,8 +1509,8 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp13', vec(28,0)) then
-				if text_buffer_pt1.v ~= nil and text_buffer_pt1.v ~= "" and tonumber(text_buffer_pt1.v) > 0 and isNumber(text_buffer_pt1.v) then
-					if text_buffer_id1.v ~= nil and text_buffer_id1.v ~= "" and tonumber(text_buffer_id1.v) >= 0 and tonumber(text_buffer_id1.v) < 1000 then
+				if text_buffer_pt1.v ~= nil and text_buffer_pt1.v ~= "" and isNumber(text_buffer_pt1.v) and tonumber(text_buffer_pt1.v) > 0 and isNumber(text_buffer_pt1.v) then
+					if text_buffer_id1.v ~= nil and text_buffer_id1.v ~= "" and isNumber(text_buffer_id1.v) and tonumber(text_buffer_id1.v) >= 0 and tonumber(text_buffer_id1.v) < 1000 then
 						sampSendChat("/sellgun deagle " .. tonumber(text_buffer_pt1.v) .. " " .. ini.GhettoMateConfig.price_Deagle * tonumber(text_buffer_pt1.v) .. " " .. tonumber(text_buffer_id1.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -1517,7 +1521,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp14', vec(28,0)) then
-				if text_buffer_pt1.v ~= nil and text_buffer_pt1.v ~= "" and tonumber(text_buffer_pt1.v) > 0 and isNumber(text_buffer_pt1.v) then
+				if text_buffer_pt1.v ~= nil and text_buffer_pt1.v ~= ""  and isNumber(text_buffer_pt1.v) and tonumber(text_buffer_pt1.v) > 0 and isNumber(text_buffer_pt1.v) then
 					sampSendChat("/gun deagle " .. tonumber(text_buffer_pt1.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
@@ -1546,8 +1550,8 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp23', vec(28,0)) then
-				if text_buffer_pt2.v ~= nil and text_buffer_pt2.v ~= "" and tonumber(text_buffer_pt2.v) > 0 and isNumber(text_buffer_pt2.v) then
-					if text_buffer_id2.v ~= nil and text_buffer_id2.v ~= "" and tonumber(text_buffer_id2.v) >= 0 and tonumber(text_buffer_id2.v) < 1000 then
+				if text_buffer_pt2.v ~= nil and text_buffer_pt2.v ~= ""  and isNumber(text_buffer_pt2.v) and tonumber(text_buffer_pt2.v) > 0 and isNumber(text_buffer_pt2.v) then
+					if text_buffer_id2.v ~= nil and text_buffer_id2.v ~= "" and isNumber(text_buffer_id2.v) and tonumber(text_buffer_id2.v) >= 0 and tonumber(text_buffer_id2.v) < 1000 then
 						sampSendChat("/sellgun m4 " .. tonumber(text_buffer_pt2.v) .. " " .. ini.GhettoMateConfig.price_M4 * tonumber(text_buffer_pt2.v) .. " " .. tonumber(text_buffer_id2.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -1558,7 +1562,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp24', vec(28,0)) then
-				if text_buffer_pt2.v ~= nil and text_buffer_pt2.v ~= "" and tonumber(text_buffer_pt2.v) > 0 and isNumber(text_buffer_pt2.v) then
+				if text_buffer_pt2.v ~= nil and text_buffer_pt2.v ~= "" and isNumber(text_buffer_pt2.v) and tonumber(text_buffer_pt2.v) > 0 and isNumber(text_buffer_pt2.v) then
 					sampSendChat("/gun M4 " .. tonumber(text_buffer_pt2.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
@@ -1587,8 +1591,8 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp33', vec(28,0)) then
-				if text_buffer_pt3.v ~= nil and text_buffer_pt3.v ~= "" and tonumber(text_buffer_pt3.v) > 0 and isNumber(text_buffer_pt3.v) then
-					if text_buffer_id3.v ~= nil and text_buffer_id3.v ~= "" and tonumber(text_buffer_id3.v) >= 0 and tonumber(text_buffer_id3.v) < 1000 then
+				if text_buffer_pt3.v ~= nil and text_buffer_pt3.v ~= "" and isNumber(text_buffer_pt3.v) and tonumber(text_buffer_pt3.v) > 0 and isNumber(text_buffer_pt3.v) then
+					if text_buffer_id3.v ~= nil and text_buffer_id3.v ~= "" and isNumber(text_buffer_id3.v) and tonumber(text_buffer_id3.v) >= 0 and tonumber(text_buffer_id3.v) < 1000 then
 						sampSendChat("/sellgun Shotgun " .. tonumber(text_buffer_pt3.v) .. " " .. ini.GhettoMateConfig.price_Shotgun * tonumber(text_buffer_pt3.v) .. " " .. tonumber(text_buffer_id3.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -1599,7 +1603,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp34', vec(28,0)) then
-				if text_buffer_pt3.v ~= nil and text_buffer_pt3.v ~= "" and tonumber(text_buffer_pt3.v) > 0 and isNumber(text_buffer_pt3.v) then
+				if text_buffer_pt3.v ~= nil and text_buffer_pt3.v ~= "" and isNumber(text_buffer_pt3.v) and tonumber(text_buffer_pt3.v) > 0 and isNumber(text_buffer_pt3.v) then
 					sampSendChat("/gun Shotgun " .. tonumber(text_buffer_pt3.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
@@ -1628,8 +1632,8 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp43', vec(28,0)) then
-				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
-					if text_buffer_id4.v ~= nil and text_buffer_id4.v ~= "" and tonumber(text_buffer_id4.v) >= 0 and tonumber(text_buffer_id4.v) < 1000 then
+				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and isNumber(text_buffer_pt4.v) and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
+					if text_buffer_id4.v ~= nil and text_buffer_id4.v ~= "" and isNumber(text_buffer_id4.v) and tonumber(text_buffer_id4.v) >= 0 and tonumber(text_buffer_id4.v) < 1000 then
 						sampSendChat("/sellgun Rifle " .. tonumber(text_buffer_pt4.v) .. " " .. ini.GhettoMateConfig.price_Rifle * tonumber(text_buffer_pt4.v) .. " " .. tonumber(text_buffer_id4.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -1640,7 +1644,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp44', vec(28,0)) then
-				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
+				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and isNumber(text_buffer_pt4.v) and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
 					sampSendChat("/gun Rifle " .. tonumber(text_buffer_pt4.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
@@ -1669,8 +1673,8 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp53', vec(28,0)) then
-				if text_buffer_pt5.v ~= nil and text_buffer_pt5.v ~= "" and tonumber(text_buffer_pt5.v) > 0 and isNumber(text_buffer_pt5.v) then
-					if text_buffer_id5.v ~= nil and text_buffer_id5.v ~= "" and tonumber(text_buffer_id5.v) >= 0 and tonumber(text_buffer_id5.v) < 1000 then
+				if text_buffer_pt5.v ~= nil and text_buffer_pt5.v ~= "" and isNumber(text_buffer_pt5.v) and tonumber(text_buffer_pt5.v) > 0 and isNumber(text_buffer_pt5.v) then
+					if text_buffer_id5.v ~= nil and text_buffer_id5.v ~= "" and isNumber(text_buffer_id5.v) and tonumber(text_buffer_id5.v) >= 0 and tonumber(text_buffer_id5.v) < 1000 then
 						sampSendChat("/sellgun AK47 " .. tonumber(text_buffer_pt5.v) .. " " .. ini.GhettoMateConfig.price_AK47 * tonumber(text_buffer_pt5.v) .. " " .. tonumber(text_buffer_id5.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -1681,7 +1685,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp54', vec(28,0)) then
-				if text_buffer_pt5.v ~= nil and text_buffer_pt5.v ~= "" and tonumber(text_buffer_pt5.v) > 0 and isNumber(text_buffer_pt5.v) then
+				if text_buffer_pt5.v ~= nil and text_buffer_pt5.v ~= "" and isNumber(text_buffer_pt5.v) and tonumber(text_buffer_pt5.v) > 0 and isNumber(text_buffer_pt5.v) then
 					sampSendChat("/gun AK47 " .. tonumber(text_buffer_pt5.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
@@ -1710,8 +1714,8 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp63', vec(28,0)) then
-				if text_buffer_pt6.v ~= nil and text_buffer_pt6.v ~= "" and tonumber(text_buffer_pt6.v) > 0 and isNumber(text_buffer_pt6.v) then
-					if text_buffer_id6.v ~= nil and text_buffer_id6.v ~= "" and tonumber(text_buffer_id6.v) >= 0 and tonumber(text_buffer_id6.v) < 1000 then
+				if text_buffer_pt6.v ~= nil and text_buffer_pt6.v ~= "" and isNumber(text_buffer_pt6.v) and tonumber(text_buffer_pt6.v) > 0 and isNumber(text_buffer_pt6.v) then
+					if text_buffer_id6.v ~= nil and text_buffer_id6.v ~= "" and isNumber(text_buffer_id6.v) and tonumber(text_buffer_id6.v) >= 0 and tonumber(text_buffer_id6.v) < 1000 then
 						sampSendChat("/sellgun SDpistol " .. tonumber(text_buffer_pt6.v) .. " " .. ini.GhettoMateConfig.price_SDpistol * tonumber(text_buffer_pt6.v) .. " " .. tonumber(text_buffer_id6.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -1722,7 +1726,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp64', vec(28,0)) then
-				if text_buffer_id6.v ~= nil and text_buffer_id6.v ~= "" and tonumber(text_buffer_id6.v) >= 0 and tonumber(text_buffer_id6.v) < 1000 then
+				if text_buffer_id6.v ~= nil and text_buffer_id6.v ~= "" and isNumber(text_buffer_pt6.v) and tonumber(text_buffer_id6.v) >= 0 and tonumber(text_buffer_id6.v) < 1000 then
 					sampSendChat("/gun SDpistol " .. tonumber(text_buffer_pt6.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
@@ -1751,8 +1755,8 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp73', vec(28,0)) then
-				if text_buffer_pt7.v ~= nil and text_buffer_pt7.v ~= "" and tonumber(text_buffer_pt7.v) > 0 and isNumber(text_buffer_pt7.v) then
-					if text_buffer_id7.v ~= nil and text_buffer_id7.v ~= "" and tonumber(text_buffer_id7.v) >= 0 and tonumber(text_buffer_id7.v) < 1000 then
+				if text_buffer_pt7.v ~= nil and text_buffer_pt7.v ~= "" and isNumber(text_buffer_pt7.v) and tonumber(text_buffer_pt7.v) > 0 and isNumber(text_buffer_pt7.v) then
+					if text_buffer_id7.v ~= nil and text_buffer_id7.v ~= "" and isNumber(text_buffer_id7.v) and tonumber(text_buffer_id7.v) >= 0 and tonumber(text_buffer_id7.v) < 1000 then
 						sampSendChat("/sellgun SMG " .. tonumber(text_buffer_pt7.v) .. " " .. ini.GhettoMateConfig.price_SMG * tonumber(text_buffer_pt7.v) .. " " .. tonumber(text_buffer_id7.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -1763,7 +1767,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Себе" .. '##inp74', vec(28,0)) then
-				if text_buffer_pt7.v ~= nil and text_buffer_pt7.v ~= "" and tonumber(text_buffer_pt7.v) > 0 and isNumber(text_buffer_pt7.v) then
+				if text_buffer_pt7.v ~= nil and text_buffer_pt7.v ~= "" and isNumber(text_buffer_pt7.v) and tonumber(text_buffer_pt7.v) > 0 and isNumber(text_buffer_pt7.v) then
 					sampSendChat("/gun SMG " .. tonumber(text_buffer_pt7.v))
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
@@ -1792,9 +1796,9 @@ function imgui.OnDrawFrame()
 			imgui.PopItemWidth()
 			imgui.SameLine(toScreenX(124))
 			if imgui.Button("Продать" .. '##inp83', vec(28,0)) then
-				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
-					if text_buffer_id8.v ~= nil and text_buffer_id8.v ~= "" and tonumber(text_buffer_id8.v) >= 0 and tonumber(text_buffer_id8.v) < 1000 then
-						sampSendChat("/selldrugs " .. tonumber(text_buffer_pt8.v) .. " " .. ini.GhettoMateConfig.price_Drugs * tonumber(text_buffer_pt8.v) .. " " .. tonumber(text_buffer_id8.v))
+				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and isNumber(text_buffer_pt8.v) and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
+					if text_buffer_id8.v ~= nil and text_buffer_id8.v ~= "" and isNumber(text_buffer_id8.v) and tonumber(text_buffer_id8.v) >= 0 and tonumber(text_buffer_id8.v) < 1000 then
+						sampSendChat("/selldrugs " .. " " .. tonumber(text_buffer_id8.v) .. " " .. tonumber(text_buffer_pt8.v) .. " " .. ini.GhettoMateConfig.price_Drugs * tonumber(text_buffer_pt8.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1804,7 +1808,7 @@ function imgui.OnDrawFrame()
 			end
 			imgui.SameLine(toScreenX(154))
 			if imgui.Button("Заюзать" .. '##inp84', vec(28,0)) then
-				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
+				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and isNumber(text_buffer_pt8.v) and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
 					sampSendChat("/usedrugs " .. text_buffer_pt8.v)
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Количество наркотиков должно быть больше нуля", main_color)
@@ -1829,11 +1833,12 @@ function imgui.OnDrawFrame()
 			imgui.SameLine()
 			imgui.PushItemWidth(toScreenX(165/5))
 			if imgui.InputInt("##InputInt1", imgui.pt1, 1, 1) then
-				if imgui.pt1.v ~= nil and imgui.pt1.v ~= "" and imgui.pt1.v >= 0 then
+				if imgui.pt1.v ~= nil and imgui.pt1.v ~= "" and isNumber(imgui.pt1.v) and imgui.pt1.v >= 0 then
 					ini[GunList].pt1 = imgui.pt1.v
 					inicfg.save(ini, directIni)
 				end
 			end
+			imgui.PopItemWidth()
 			imgui.SameLine()
 			if combo_select1.v == 0 then
 				mats1 = imgui.pt1.v * 3
@@ -1878,11 +1883,12 @@ function imgui.OnDrawFrame()
 			imgui.SameLine()
 			imgui.PushItemWidth(toScreenX(165/5))
 			if imgui.InputInt("##InputInt2", imgui.pt2, 1, 1) then
-				if imgui.pt2.v ~= nil and imgui.pt2.v ~= "" and imgui.pt2.v >= 0 then
+				if imgui.pt2.v ~= nil and imgui.pt2.v ~= "" and isNumber(imgui.pt2.v) and imgui.pt2.v >= 0 then
 					ini[GunList].pt2 = imgui.pt2.v
 					inicfg.save(ini, directIni)
 				end
 			end
+			imgui.PopItemWidth()
 			imgui.SameLine()
 			if combo_select2.v == 0 then
 				mats2 = imgui.pt2.v * 3
@@ -1927,11 +1933,12 @@ function imgui.OnDrawFrame()
 			imgui.SameLine()
 			imgui.PushItemWidth(toScreenX(165/5))
 			if imgui.InputInt("##InputInt3", imgui.pt3, 1, 1) then
-				if imgui.pt3.v ~= nil and imgui.pt3.v ~= "" and imgui.pt3.v >= 0 then
+				if imgui.pt3.v ~= nil and imgui.pt3.v ~= "" and isNumber(imgui.pt3.v) and imgui.pt3.v >= 0 then
 					ini[GunList].pt3 = imgui.pt3.v
 					inicfg.save(ini, directIni)
 				end
 			end
+			imgui.PopItemWidth()
 			imgui.SameLine()
 			if combo_select3.v == 0 then
 				mats3 = imgui.pt3.v * 3
@@ -1971,8 +1978,20 @@ function imgui.OnDrawFrame()
 
 		elseif imgui.settingsTab == 5 then
 			imgui.Text("Статистика: ")
-			imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [" .. math.floor(ini2[GhettoMateCapture].kill / ini2[GhettoMateCapture].death*100)/100 .. "]")
-
+			if ini2[GhettoMateCapture].kill == 0 and ini2[GhettoMateCapture].death == 0 then
+				imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [0%]")
+			else
+				imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [" .. math.floor(ini2[GhettoMateCapture].kill / ini2[GhettoMateCapture].death*100)/100 .. "%]")
+			end
+			imgui.SameLine(toScreenX(100))
+			if ini2[GhettoMateCapture].CaptureDeath == 0 then 
+				imgui.Text("Убийств / Смертей за капт: " .. ini2[GhettoMateCapture].CaptureKill .. " / " .. ini2[GhettoMateCapture].CaptureDeath .. " [0%]")
+			else
+				if ini2[GhettoMateCapture].CaptureKill == nil then ini2[GhettoMateCapture].CaptureKill = 0 inicfg.save(ini2, directIni2) end -- potom dell
+				if ini2[GhettoMateCapture].CaptureDeath == nil then ini2[GhettoMateCapture].CaptureDeath = 0 inicfg.save(ini2, directIni2) end -- potom dell
+				imgui.Text("Убийств / Смертей за капт: " .. ini2[GhettoMateCapture].CaptureKill .. " / " .. ini2[GhettoMateCapture].CaptureDeath .. " [" .. math.floor(ini2[GhettoMateCapture].CaptureKill / ini2[GhettoMateCapture].CaptureDeath*100)/100 .. "%]")
+			end
+			
 			imgui.Text("  ")
 			imgui.Text("Grove убито: ")
 			imgui.SameLine(toScreenX(80))
@@ -2030,7 +2049,7 @@ function imgui.OnDrawFrame()
 
 		else
 			if script.update then
-				if imgui.Button("Обновить скрипт", vec(55,0)) then
+				if imgui.Button("Обновить скрипт", vec(112,0)) then
 					imgui.Process = false
 					update()
 				end
@@ -2070,151 +2089,6 @@ function imgui.OnDrawFrame()
 		ini[GhettoMateConfig].X = pos.x
 		ini[GhettoMateConfig].Y = pos.y
 		inicfg.save(ini, directIni)
-
-		if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
-			color[1] = "{808080}"
-		else
-			if timerM[1] == 1 then
-				color[1] = "{d10000}"
-			else
-				color[1] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then
-			color[2] = "{808080}"
-		else
-			if timerM[2] == 1 then
-				color[2] = "{d10000}"
-			else
-				color[2] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then
-			color[3] = "{808080}"
-		else
-			if timerM[3] == 1 then
-				color[3] = "{d10000}"
-			else
-				color[3] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then
-			color[4] = "{808080}"
-		else
-			if timerM[4] == 1 then
-				color[4] = "{d10000}"
-			else
-				color[4] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then
-			color[5] = "{808080}"
-		else
-			if timerM[5] == 1 then
-				color[5] = "{d10000}"
-			else
-				color[5] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then
-			color[6] = "{808080}"
-		else
-			if timerM[6] == 1 then
-				color[6] = "{d10000}"
-			else
-				color[6] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then
-			color[7] = "{808080}"
-		else
-			if timerM[7] == 1 then
-				color[7] = "{d10000}"
-			else
-				color[7] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then
-			color[8] = "{808080}"
-		else
-			if timerM[8] == 1 then
-				color[8] = "{d10000}"
-			else
-				color[8] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then
-			color[9] = "{808080}"
-		else
-			if timerM[9] == 1 then
-				color[9] = "{d10000}"
-			else
-				color[9] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then
-			color[10] = "{808080}"
-		else
-			if timerM[10] == 1 then
-				color[10] = "{d10000}"
-			else
-				color[10] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then
-			color[11] = "{808080}"
-		else
-			if timerM[11] == 1 then
-				color[11] = "{d10000}"
-			else
-				color[11] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then
-			color[12] = "{808080}"
-		else
-			if timerM[12] == 1 then
-				color[12] = "{d10000}"
-			else
-				color[12] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then
-			color[13] = "{808080}"
-		else
-			if timerM[13] == 1 then
-				color[13] = "{d10000}"
-			else
-				color[13] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then
-			color[14] = "{808080}"
-		else
-			if timerM[14] == 1 then
-				color[14] = "{d10000}"
-			else
-				color[14] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then
-			color[15] = "{808080}"
-		else
-			if timerM[15] == 1 then
-				color[15] = "{d10000}"
-			else
-				color[15] = "{06940f}"
-			end
-		end
-		if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then
-			color[16] = "{808080}"
-		else
-			if timerM[16] == 1 then
-				color[16] = "{d10000}"
-			else
-				color[16] = "{06940f}"
-			end
-		end
 
 		imgui.TextColoredRGB(u8"1.  " .. ini[GhettoMateName].Name1)
 			imgui.SameLine(toScreenX(50))
@@ -2271,12 +2145,6 @@ function imgui.OnDrawFrame()
 	end
 
 	if mo_window_state.v then
-		if ini[GhettoMateConfig].X_MO == nil then
-			ini[GhettoMateConfig].X_MO = 0
-		end
-		if ini[GhettoMateConfig].Y_MO == nil then
-			ini[GhettoMateConfig].Y_MO = 0
-		end
 		if InterfacePositionMO == true then
 			imgui.SetNextWindowPos(imgui.ImVec2(ini[GhettoMateConfig].X_MO, ini[GhettoMateConfig].Y_MO))
 			inicfg.save(ini, directIni)
@@ -2287,34 +2155,6 @@ function imgui.OnDrawFrame()
 		ini[GhettoMateConfig].X_MO = pos_MO.x
 		ini[GhettoMateConfig].Y_MO = pos_MO.y
 		inicfg.save(ini, directIni)
-
-		if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
-			colorMO[1] = "{808080}"
-		else
-			if timerMO[1] == 1 then
-				colorMO[1] = "{d10000}"
-			else
-				colorMO[1] = "{06940f}"
-			end
-		end
-		if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
-			colorMO[2] = "{808080}"
-		else
-			if timerMO[2] == 1 then
-				colorMO[2] = "{d10000}"
-			else
-				colorMO[2] = "{06940f}"
-			end
-		end
-		if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
-			colorMO[3] = "{808080}"
-		else
-			if timerMO[3] == 1 then
-				colorMO[3] = "{d10000}"
-			else
-				colorMO[3] = "{06940f}"
-			end
-		end
 
 		imgui.TextColoredRGB(u8"1.  MO LS")
 			imgui.SameLine(toScreenX(50))
@@ -2382,6 +2222,7 @@ function GunWaiting(gun1, gun2, gun3, pt1, pt2, pt3)
 	if gun1 == 4 then gun1 = "sdpistol" end
 	if gun1 == 5 then gun1 = "ak47" end
 	if gun1 == 6 then gun1 = "smg" end
+	if gun1 == 7 then gun1 = "-" end
 
 	if gun2 == 0 then gun2 = "deagle" end
 	if gun2 == 1 then gun2 = "m4" end
@@ -2390,6 +2231,7 @@ function GunWaiting(gun1, gun2, gun3, pt1, pt2, pt3)
 	if gun2 == 4 then gun2 = "sdpistol" end
 	if gun2 == 5 then gun2 = "ak47" end
 	if gun2 == 6 then gun2 = "smg" end
+	if gun2 == 7 then gun2 = "-" end
 
 	if gun3 == 0 then gun3 = "deagle" end
 	if gun3 == 1 then gun3 = "m4" end
@@ -2398,16 +2240,17 @@ function GunWaiting(gun1, gun2, gun3, pt1, pt2, pt3)
 	if gun3 == 4 then gun3 = "sdpistol" end
 	if gun3 == 5 then gun3 = "ak47" end
 	if gun3 == 6 then gun3 = "smg" end
+	if gun3 == 7 then gun3 = "-" end
 
-	if gun1 ~= 7 then
+	if gun1 ~= "-" then
 		wait(600)
 		sampSendChat("/gun " .. gun1 .. " " .. pt1)
 	end
-	if gun2 ~= 7 then
+	if gun2 ~= "-" then
 		wait(600)
 		sampSendChat("/gun " .. gun2 .. " " .. pt2)
 	end
-	if gun2 ~= 7 then
+	if gun2 ~= "-" then
 		wait(600)
 		sampSendChat("/gun " .. gun3 .. " " .. pt3)
 	end
@@ -3009,119 +2852,100 @@ function MOTimeFunction()
 end
 
 function sampev.onSendPickedUpPickup(pickupId)
-	if pickupId == 1039 then  -- вошел
+	if pickupId == 1139 then  -- вошел
 		Magaz1 = true
-	end
-	if pickupId == 1040 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then  -- вышел
+	else
 		Magaz1 = false
 	end
-	if pickupId == 1037 then
+	if pickupId == 1137 then
 		Magaz2 = true
-	end
-	if pickupId == 1038 or pickupId == 1039 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz2 = false
 	end
-	if pickupId == 979 then
+	if pickupId == 1079 then
 		Magaz3 = true
-	end
-	if pickupId == 980 or pickupId == 1039 or pickupId == 1037 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz3 = false
 	end
-	if pickupId == 977 then
+	if pickupId == 1077 then
 		Magaz4 = true
-	end
-	if pickupId == 978 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz4 = false
 	end
-	if pickupId == 983 then
+	if pickupId == 1083 then
 		Magaz5 = true
-	end
-	if pickupId == 984 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz5 = false
 	end
-	if pickupId == 1035 then
+	if pickupId == 1135 then
 		Magaz6 = true
-	end
-	if pickupId == 1036 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz6 = false
 	end
-	if pickupId == 987 then
+	if pickupId == 1087 then
 		Magaz7 = true
-	end
-	if pickupId == 988 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz7 = false
 	end
-	if pickupId == 981 then
+	if pickupId == 1081 then
 		Magaz8 = true
-	end
-	if pickupId == 982 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz8 = false
 	end
-	if pickupId == 985 then
+	if pickupId == 1085 then
 		Magaz9 = true
-	end
-	if pickupId == 986 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz9 = false
 	end
-	if pickupId == 1033 then
+	if pickupId == 1133 then
 		Magaz10 = true
-	end
-	if pickupId == 1034 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz10 = false
 	end
-	if pickupId == 1031 then
+	if pickupId == 1131 then
 		Magaz11 = true
-	end
-	if pickupId == 1032 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz11 = false
 	end
-	if pickupId == 1019 then
+	if pickupId == 1119 then
 		Magaz12 = true
-	end
-	if pickupId == 1020 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz12 = false
 	end
-	if pickupId == 1025 then
+	if pickupId == 1125 then
 		Magaz13 = true
-	end
-	if pickupId == 1026 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1021 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz13 = false
 	end
-	if pickupId == 1021 then
+	if pickupId == 1121 then
 		Magaz14 = true
-	end
-	if pickupId == 1022 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1023 or pickupId == 1029 then
+	else
 		Magaz14 = false
 	end
-	if pickupId == 1023 then
+	if pickupId == 1123 then
 		Magaz15 = true
-	end
-	if pickupId == 1024 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1029 then
+	else
 		Magaz15 = false
 	end
-	if pickupId == 1029 then
+	if pickupId == 1129 then
 		Magaz16 = true
-	end
-	if pickupId == 1030 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023 then
+	else
 		Magaz16 = false
 	end
 
-	if pickupId == 1818 then
+	if pickupId == 1832 then
 		MOLS = true
-	end
-	if pickupId == 1817 or pickupId == 1820 or pickupID == 1822 or pickupId == 1029 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023  then
+	else
 		MOLS = false
 	end
-	if pickupId == 1820 then
+	if pickupId == 1834 then
 		MOSF = true
-	end
-	if pickupId == 1819 or pickupId == 1818 or pickupID == 1822 or pickupId == 1029 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023  then
+	else
 		MOSF = false
 	end
-	if pickupId == 1822 then
+	if pickupId == 1836 then
 		MOLV = true
-	end
-	if pickupId == 1821 or pickupId == 1820 or pickupID == 1818 or pickupId == 1029 or pickupId == 1039 or pickupId == 1037 or pickupId == 979 or pickupId == 977 or pickupId == 983 or pickupId == 1035 or pickupId == 987 or pickupId == 981 or pickupId == 985 or pickupId == 1033 or pickupId == 1031 or pickupId == 1019 or pickupId == 1025 or pickupId == 1021 or pickupId == 1023  then
+	else
 		MOLV = false
 	end
 end
@@ -3260,8 +3084,7 @@ function sampev.onServerMessage(color, text)
 	if Magaz14 == true then
 		if string.find(text, u8:decode" Следующее ограбление будет доступно в .+") then
 			timerMagaz[14] = string.match(text, u8:decode" Следующее ограбление будет доступно в (.+)")
-				ini3[GhettoMateTime].time14 = timerMagaz[14]
-				inicfg.save(ini3, directIni3)
+			ini3[GhettoMateTime].time14 = timerMagaz[14]
 			hourM[14], minuteM[14], secondsM[14] =  string.match(text, u8:decode" Следующее ограбление будет доступно в (%d+)[^%d]+(%d+)[^%d]+(%d+)")
 			ini3[GhettoMateSeconds].time14 = hourM[14] * 3600 + minuteM[14] * 60 + secondsM[14]
 			inicfg.save(ini3, directIni3)
@@ -3378,22 +3201,29 @@ function sampev.onServerMessage(color, text)
 			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Метка установлена {FFFF00}" .. thiefPos, main_color)
 		end
 	end
-
+	
+	ini4 = inicfg.load(GhettoMateSettings, directIni4)
 	if ini4[GhettoMateSettings].AnimUgonyala then
 		if string.find(text, u8:decode"SMS: Вот тачка которую мы заказывали.") then
 			sampSendChat("/anim " .. ini4[GhettoMateSettings].IdAnimUgonyala)
 		end
 	end
+	
 	-- DRUGS --
+	
 	if ini4[GhettoMateSettings].NotifyDrugs then
 		if string.find(text, u8:decode"(( Здоровье пополнено до: .+ ))") or string.find(text, u8:decode"(( Остаток: .+ грамм ))") then
 			Use = false
 			DrugsWait:run()
 		end
 	end
-	if string.find(text, u8:decode"Недостаточно наркотиков") and DrugsCount > 0 then
-		DrugsCount = DrugsCount - 1
-		UseDrugsWait:run(DrugsCount)
+	if string.find(text, u8:decode"Недостаточно наркотиков") and ini.GhettoMateConfig.my_drugs > 0 then
+		--DrugsCount = DrugsCount - 1
+		--UseDrugsWait:run(DrugsCount)
+		UseDrugsTimer:run(ini.GhettoMateConfig.my_drugs)
+	elseif string.find(text, u8:decode"Недостаточно наркотиков") and ini.GhettoMateConfig.my_drugs == 0 then
+		ini.GhettoMateConfig.my_drugs = 0 
+		inicfg.save(ini, directIni)
 	end
 
 	if string.find(text,  u8:decode" Остаток: .+ грамм") then
@@ -3416,6 +3246,16 @@ function sampev.onServerMessage(color, text)
 	if string.find(text, u8:decode"У вас 800/800 материалов с собой") then
 		ini.GhettoMateConfig.my_mats = 800
 		inicfg.save(ini, directIni)
+	end
+	if string.find(text, u8:decode"Вы купили .+ грамм за .+ вирт") then
+		ini.GhettoMateConfig.my_drugs = string.match(text, u8:decode"У вас есть (.+) грамм")
+		inicfg.save(ini, directIni)
+	end
+	
+	if string.find(text, u8:decode"На вашу территорию напали") or string.find(text, u8:decode"Ваша банда напала на территорию") then
+		ini2[GhettoMateCapture].CaptureKill = 0
+		ini2[GhettoMateCapture].CaptureDeath = 0
+		inicfg.save(ini2, directIni2)
 	end
 end
 
@@ -3939,7 +3779,7 @@ function sampev.onSendCommand(cmd)
 				end
 
 			else
-				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше 0", main_color)
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Патронов должно быть больше нуля", main_color)
 			end
 		else
 			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Неверно выбрано оружие", main_color)
@@ -3947,21 +3787,55 @@ function sampev.onSendCommand(cmd)
 	end
 
 	if args[1] == '/sd' then
-		if args[2] ~= nil and args[2] ~= "" and tonumber(args[2]) > 0 and isNumber(args[2]) then -- pt
-			if args[3] ~= nil and args[3] ~= "" and tonumber(args[3]) >= 0 and tonumber(args[3]) < 1000 then --id player
-				sampSendChat("/selldrugs " .. args[3] .. " " .. args[2] .. " " .. tonumber(args[2]) * tonumber(ini.GhettoMateConfig.price_Drugs))
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > tonumber(0) then -- id
+			if args[3] ~= nil and args[3] ~= "" and isNumber(args[3])  and tonumber(args[3]) >= 0 and tonumber(args[3]) < 1000 then -- count
+				sampSendChat("/selldrugs " .. args[2] .. " " .. args[3] .. " " .. tonumber(args[3]) * tonumber(ini.GhettoMateConfig.price_Drugs))
+			else
+				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Наркотиков должно быть больше нуля", main_color)
 			end
+		else
+			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 		end
 	end
 
 	if args[1] == '//gun' then
 		GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
 	end
-
+	
+	if args[1] == '/deagle' then
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > 0 then --pt
+			sampSendChat("/gun deagle " .. args[2])
+		end
+	elseif args[1] == '/m4' then
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > 0 then --pt
+			sampSendChat("/gun m4 " .. args[2])
+		end
+	elseif args[1] == '/rifle' then
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > 0 then --pt
+			sampSendChat("/gun rifle " .. args[2])
+		end
+	elseif args[1] == '/shotgun' then
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > 0 then --pt
+			sampSendChat("/gun shotgun " .. args[2])
+		end
+	elseif args[1] == '/sdpistol' then
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > 0 then --pt
+			sampSendChat("/gun sdpistol " .. args[2])
+		end
+	elseif args[1] == '/ak47' then
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > 0 then --pt
+			sampSendChat("/gun ak47 " .. args[2])
+		end
+	elseif args[1] == '/smg' then
+		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > 0 then --pt
+			sampSendChat("/gun smg " .. args[2])
+		end
+	end
+		
 end
 
 function isNumber(n)
-    return #n > 0 and n:match("[^%d]") == nil or n:match("-[^%d]") == nil
+    return type(tonumber(n)) == "number"
 end
 
 function cmd_usedrugs()
@@ -4124,6 +3998,7 @@ function sampev.onPlayerDeathNotification(playerId, killerId, reason)
 			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Вы убили {"..CaptureColor.."}" .. killer_name .. u8:decode' {FFFFFF}с помощью ' .. getweaponname(reason), main_color)
 		end
 		ini2[GhettoMateCapture].kill = ini2[GhettoMateCapture].kill + 1
+		ini2[GhettoMateCapture].CaptureKill = ini2[GhettoMateCapture].CaptureKill + 1
 		inicfg.save(ini2, directIni2)
 	end
 	if my_id == killerId then
@@ -4136,6 +4011,7 @@ function sampev.onPlayerDeathNotification(playerId, killerId, reason)
 			sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Вас убил {"..CaptureColor.."}" .. killer_name .. u8:decode' {FFFFFF}с помощью ' .. getweaponname(reason), main_color)
 		end
 		ini2[GhettoMateCapture].death = ini2[GhettoMateCapture].death + 1
+		ini2[GhettoMateCapture].CaptureDeath = ini2[GhettoMateCapture].CaptureDeath + 1
 		inicfg.save(ini2, directIni2)
 	end
 end
@@ -4237,4 +4113,181 @@ end
 
 function vec(gX, gY)
     return imgui.ImVec2(convertGameScreenCoordsToWindowScreenCoords(gX, gY))
+end
+
+function LarekChecker()
+	if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
+		color[1] = "{808080}"
+	else
+		if timerM[1] == 1 then
+			color[1] = "{d10000}"
+		else
+			color[1] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time2 == u8:decode"Неизвестно" then
+		color[2] = "{808080}"
+	else
+		if timerM[2] == 1 then
+			color[2] = "{d10000}"
+		else
+			color[2] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time3 == u8:decode"Неизвестно" then
+		color[3] = "{808080}"
+	else
+		if timerM[3] == 1 then
+			color[3] = "{d10000}"
+		else
+			color[3] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time4 == u8:decode"Неизвестно" then
+		color[4] = "{808080}"
+	else
+		if timerM[4] == 1 then
+			color[4] = "{d10000}"
+		else
+			color[4] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time5 == u8:decode"Неизвестно" then
+		color[5] = "{808080}"
+	else
+		if timerM[5] == 1 then
+			color[5] = "{d10000}"
+		else
+			color[5] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time6 == u8:decode"Неизвестно" then
+		color[6] = "{808080}"
+	else
+		if timerM[6] == 1 then
+			color[6] = "{d10000}"
+		else
+			color[6] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time7 == u8:decode"Неизвестно" then
+		color[7] = "{808080}"
+	else
+		if timerM[7] == 1 then
+			color[7] = "{d10000}"
+		else
+			color[7] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time8 == u8:decode"Неизвестно" then
+		color[8] = "{808080}"
+	else
+		if timerM[8] == 1 then
+			color[8] = "{d10000}"
+		else
+			color[8] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time9 == u8:decode"Неизвестно" then
+		color[9] = "{808080}"
+	else
+		if timerM[9] == 1 then
+			color[9] = "{d10000}"
+		else
+			color[9] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time10 == u8:decode"Неизвестно" then
+		color[10] = "{808080}"
+	else
+		if timerM[10] == 1 then
+			color[10] = "{d10000}"
+		else
+			color[10] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time11 == u8:decode"Неизвестно" then
+		color[11] = "{808080}"
+	else
+		if timerM[11] == 1 then
+			color[11] = "{d10000}"
+		else
+			color[11] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time12 == u8:decode"Неизвестно" then
+		color[12] = "{808080}"
+	else
+		if timerM[12] == 1 then
+			color[12] = "{d10000}"
+		else
+			color[12] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time13 == u8:decode"Неизвестно" then
+		color[13] = "{808080}"
+	else
+		if timerM[13] == 1 then
+			color[13] = "{d10000}"
+		else
+			color[13] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time14 == u8:decode"Неизвестно" then
+		color[14] = "{808080}"
+	else
+		if timerM[14] == 1 then
+			color[14] = "{d10000}"
+		else
+			color[14] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time15 == u8:decode"Неизвестно" then
+		color[15] = "{808080}"
+	else
+		if timerM[15] == 1 then
+			color[15] = "{d10000}"
+		else
+			color[15] = "{06940f}"
+		end
+	end
+	if ini3[GhettoMateTime].time16 == u8:decode"Неизвестно" then
+		color[16] = "{808080}"
+	else
+		if timerM[16] == 1 then
+			color[16] = "{d10000}"
+		else
+			color[16] = "{06940f}"
+		end
+	end
+end
+
+function MOChecker()
+	if ini3[TimeMO].time1 == u8:decode"Неизвестно" then
+		colorMO[1] = "{808080}"
+	else
+		if timerMO[1] == 1 then
+			colorMO[1] = "{d10000}"
+		else
+			colorMO[1] = "{06940f}"
+		end
+	end
+	if ini3[TimeMO].time2 == u8:decode"Неизвестно" then
+		colorMO[2] = "{808080}"
+	else
+		if timerMO[2] == 1 then
+			colorMO[2] = "{d10000}"
+		else
+			colorMO[2] = "{06940f}"
+		end
+	end
+	if ini3[TimeMO].time3 == u8:decode"Неизвестно" then
+		colorMO[3] = "{808080}"
+	else
+		if timerMO[3] == 1 then
+			colorMO[3] = "{d10000}"
+		else
+			colorMO[3] = "{06940f}"
+		end
+	end
 end
