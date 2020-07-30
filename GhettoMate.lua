@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
 script_version('24/07/2020')
-script_version_number(13)
+script_version_number(14)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
@@ -22,6 +22,7 @@ local ini4 = {}
 local main_window_state  = imgui.ImBool(false)
 local larek_window_state = imgui.ImBool(false)
 local mo_window_state    = imgui.ImBool(false)
+local ug_window_state    = imgui.ImBool(false)
 
 local resX, resY = getScreenResolution()
 local main_color = 0x323232
@@ -91,11 +92,10 @@ local MOTime = {false, false, false}
 --UGONYALA--
 local ugontimer = 0
 local ugtimer = 0
+local ugdistance = 0
 local mark, ugcheckpoint = nil, nil
 local marks, ugcheckpoints = {}, {}
 local vehlist = {}
-local spam = true
-local notify = false
 local search = false
 local thiefPos = ""
 --DRUGS
@@ -592,7 +592,7 @@ function main()
 		inicfg.save(ini4, directIni4)
 	end
 
-	ini = inicfg.load(GhettoMateConfig, directIni)
+	ini  = inicfg.load(GhettoMateConfig, directIni)
 	ini2 = inicfg.load(GhettoMateMoney, directIni2)
 	ini3 = inicfg.load(GhettoMateTime, directIni3)
 	ini4 = inicfg.load(GhettoMateSettings, directIni4)
@@ -609,12 +609,11 @@ function main()
 	imgui.GetIO().Fonts:Clear()
 	imgui.GetIO().Fonts:AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 14/(1600/getScreenResolution()), nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic())
 	imgui.RebuildFonts()
-	imgui.Process = true
-
+	imgui.Process = false
+	imgui.ShowCursor = false
 	while true do
 		wait(250)
 		
-		imgui.ShowCursor = false
 		paused = isGamePaused()
 
 		GhettoMateConfig = string.format('GhettoMateConfig')
@@ -687,34 +686,33 @@ function main()
 						posX, posY, posZ = getCarCoordinates(car)
 						if getCarDoorLockStatus(car) == 2 then
 							isRepeat = false
+							isRepeatTwo = false
 							for k, vehh in ipairs(vehlist) do
 								if vehId == vehh[5] then
 									isRepeat = true
+									isRepeatTwo = true
 									vehh[2] = posX
 									vehh[3] = posY
 									vehh[4] = posZ
 									vehh[6] = driverNickname
 									vehh[7] = os.clock()
 									if carname then
-										if string.lower(carname) == string.lower(vehnames[modelid-399]) then
+										if string.lower(carname) == string.lower(vehnames[modelid-399]) and driverNickname ~= my_name then
 											removeMarks()
 											mark = addSpriteBlipForCoord(vehh[2],vehh[3],vehh[4],55)
 											ugcheckpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
 											search = true
 											if ini4[GhettoMateSettings].NotifyUgonyala then
-												if spam then
-													if isDriver then
-														sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
-													else
-														sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
-													end
-													if ini4[GhettoMateSettings].Sounds then
-														soundManager.playSound("message_tip")
-													end
-													spam = false
+												if isDriver then
+													--sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
+												else
+													--sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
+												end
+												if ini4[GhettoMateSettings].Sounds then
+													--soundManager.playSound("message_tip")
 												end
 											end
-											if marks then
+											--[[if marks then
 												for i, mark in ipairs(marks) do
 													removeBlip(mark)
 												end
@@ -723,27 +721,25 @@ function main()
 												for i, ugcheckpoint in ipairs(ugcheckpoints) do
 													deleteCheckpoint(ugcheckpoint)
 												end
-											end
+											end]]
 										end
 									end
 								end
 							end
-							if not isRepeat then
+							if not isRepeat and not search and driverNickname ~= my_name then
+								table.insert(vehlist, {vehnames[modelid-399], posX, posY, posZ, vehId, driverNickname, os.clock()})
+							end
+							if not isRepeatTwo and search and driverNickname ~= my_name then
 								table.insert(vehlist, {vehnames[modelid-399],posX,posY,posZ,vehId, driverNickname, os.clock()})
-								digit = math.ceil(posX/250)
-								alpha = math.ceil(posY/250)
-								if ini4[GhettoMateSettings].NotifyUgonyala then
-									if spam then
-										if notify then
-											if isDriver then
-												sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Новый транспорт {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
-											else
-												sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Новый транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
-											end
-											if ini4[GhettoMateSettings].Sounds then
-												soundManager.playSound("message_tip")
-											end
-											spam = false
+								if string.lower(carname) == string.lower(vehnames[modelid-399]) then
+									if ini4[GhettoMateSettings].NotifyUgonyala then
+										if isDriver then
+											sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
+										else
+											sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
+										end
+										if ini4[GhettoMateSettings].Sounds then
+											soundManager.playSound("message_tip")
 										end
 									end
 								end
@@ -754,29 +750,26 @@ function main()
 									vehh[2] = posX
 									vehh[3] = posY
 									vehh[4] = posZ
-									if driverNickname ~= NickName then
+									if driverNickname ~= my_name then
 										vehh[6] = driverNickname
 									end
 									vehh[7] = os.clock()
 									if carname then
-										if string.lower(carname) == string.lower(vehnames[modelid-399]) then
+										if string.lower(carname) == string.lower(vehnames[modelid-399]) and driverNickname ~= my_name then
 											removeMarks()
 											mark = addSpriteBlipForCoord(vehh[2],vehh[3],vehh[4],55)
 											ugcheckpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
 											if ini4[GhettoMateSettings].NotifyUgonyala then
-												if spam then
-													if isDriver then
-														sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
-													else
-														sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
-													end
-													if ini4[GhettoMateSettings].Sounds then
-														soundManager.playSound("message_tip")
-													end
-													spam = false
+												if isDriver then
+												--	sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
+												else
+												--	sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
+												end
+												if ini4[GhettoMateSettings].Sounds then
+													soundManager.playSound("message_tip")
 												end
 											end
-											if marks then
+											--[[if marks then
 												for i, mark in ipairs(marks) do
 													removeBlip(mark)
 												end
@@ -785,7 +778,7 @@ function main()
 												for i, ugcheckpoint in ipairs(ugcheckpoints) do
 													deleteCheckpoint(ugcheckpoint)
 												end
-											end
+											end]]
 										end
 									end
 								end
@@ -1002,10 +995,10 @@ end
 
 function imgui.OnDrawFrame()
 	if main_window_state.v then
-		imgui.ShowCursor = true
 		local resX, resY = getScreenResolution()
 		imgui.SetNextWindowSize(vec(212, 190))
 		imgui.SetNextWindowPos(vec(200, 118), 2)
+		imgui.ShowCursor = true
 		imgui.Begin('GhettoMate ', main_window_state, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoScrollbar)
 		imgui.BeginChild('top', vec(210, 9), false)
 			imgui.BeginChild("##inp101", vec(32.5,9), false)
@@ -1189,15 +1182,16 @@ function imgui.OnDrawFrame()
 					sampSendChat("/fc")
 				end
 			end
-			if ugtimer > 0 then
-				imgui.SameLine(toScreenX(114))
+			if ugtimer ~= nil and ugtimer ~= "" and isNumber(ugtimer) and ugtimer > 0 then
+				imgui.SameLine(toScreenX(116))
 				imgui.Text("" .. math.floor(ugtimer))
 			end
 
-			if DrugsTimer > 0 then
-				imgui.SameLine(toScreenX(139))
+			if DrugsTimer ~= nil and DrugsTimer ~= "" and isNumber(DrugsTimer) and DrugsTimer > 0 then
+				imgui.SameLine(toScreenX(139.5))
 				imgui.Text("" .. math.floor(DrugsTimer))
 			end
+				
 			imgui.SameLine(toScreenX(148))
 			if not Use then
 				if imgui.Button("Drugs OFF", vec(55,0)) then
@@ -1798,7 +1792,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp83', vec(28,0)) then
 				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and isNumber(text_buffer_pt8.v) and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
 					if text_buffer_id8.v ~= nil and text_buffer_id8.v ~= "" and isNumber(text_buffer_id8.v) and tonumber(text_buffer_id8.v) >= 0 and tonumber(text_buffer_id8.v) < 1000 then
-						sampSendChat("/selldrugs " .. " " .. tonumber(text_buffer_id8.v) .. " " .. tonumber(text_buffer_pt8.v) .. " " .. ini.GhettoMateConfig.price_Drugs * tonumber(text_buffer_pt8.v))
+						sampSendChat("/selldrugs " .. tonumber(text_buffer_id8.v) .. " " .. tonumber(text_buffer_pt8.v) .. " " .. (ini.GhettoMateConfig.price_Drugs * tonumber(text_buffer_pt8.v)))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1980,15 +1974,19 @@ function imgui.OnDrawFrame()
 			imgui.Text("Статистика: ")
 			if ini2[GhettoMateCapture].kill == 0 and ini2[GhettoMateCapture].death == 0 then
 				imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [0%]")
+			elseif ini2[GhettoMateCapture].kill ~= 0 and ini2[GhettoMateCapture].death == 0 then
+				imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [100%]")
 			else
 				imgui.Text("Убийств / Смертей: " .. ini2[GhettoMateCapture].kill .. " / " .. ini2[GhettoMateCapture].death .. " [" .. math.floor(ini2[GhettoMateCapture].kill / ini2[GhettoMateCapture].death*100)/100 .. "%]")
 			end
 			imgui.SameLine(toScreenX(100))
-			if ini2[GhettoMateCapture].CaptureDeath == 0 then 
-				imgui.Text("Убийств / Смертей за капт: " .. ini2[GhettoMateCapture].CaptureKill .. " / " .. ini2[GhettoMateCapture].CaptureDeath .. " [0%]")
-			else
 				if ini2[GhettoMateCapture].CaptureKill == nil then ini2[GhettoMateCapture].CaptureKill = 0 inicfg.save(ini2, directIni2) end -- potom dell
 				if ini2[GhettoMateCapture].CaptureDeath == nil then ini2[GhettoMateCapture].CaptureDeath = 0 inicfg.save(ini2, directIni2) end -- potom dell
+			if ini2[GhettoMateCapture].CaptureDeath == 0 and ini2[GhettoMateCapture].CaptureKill == 0 then 
+				imgui.Text("Убийств / Смертей за капт: " .. ini2[GhettoMateCapture].CaptureKill .. " / " .. ini2[GhettoMateCapture].CaptureDeath .. " [0%]")
+			elseif ini2[GhettoMateCapture].CaptureDeath == 0 and ini2[GhettoMateCapture].CaptureKill ~= 0 then 
+				imgui.Text("Убийств / Смертей за капт: " .. ini2[GhettoMateCapture].CaptureKill .. " / " .. ini2[GhettoMateCapture].CaptureDeath .. " [100%]")
+			else
 				imgui.Text("Убийств / Смертей за капт: " .. ini2[GhettoMateCapture].CaptureKill .. " / " .. ini2[GhettoMateCapture].CaptureDeath .. " [" .. math.floor(ini2[GhettoMateCapture].CaptureKill / ini2[GhettoMateCapture].CaptureDeath*100)/100 .. "%]")
 			end
 			
@@ -2076,6 +2074,8 @@ function imgui.OnDrawFrame()
 		end
 		imgui.EndChild()
 		imgui.End()
+	else
+		imgui.ShowCursor = false
 	end
 
 	if larek_window_state.v then
@@ -2616,81 +2616,97 @@ function Refresh()
 		ini3[GhettoMateSeconds].time1 = 0
 		ini3[GhettoMateTime].time1 = u8:decode"Неизвестно"
 		color[1] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time2) > oneHour then
 		ini3[GhettoMateSeconds].time2 = 0
 		ini3[GhettoMateTime].time2 = u8:decode"Неизвестно"
 		color[2] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time3) > oneHour then
 		ini3[GhettoMateSeconds].time3 = 0
 		ini3[GhettoMateTime].time3 = u8:decode"Неизвестно"
 		color[3] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time4) > oneHour then
 		ini3[GhettoMateSeconds].time4 = 0
 		ini3[GhettoMateTime].time4 = u8:decode"Неизвестно"
 		color[4] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time5) > oneHour then
 		ini3[GhettoMateSeconds].time5 = 0
 		ini3[GhettoMateTime].time5 = u8:decode"Неизвестно"
 		color[5] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time6) > oneHour then
 		ini3[GhettoMateSeconds].time6 = 0
 		ini3[GhettoMateTime].time6 = u8:decode"Неизвестно"
 		color[6] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time7) > oneHour then
 		ini3[GhettoMateSeconds].time7 = 0
 		ini3[GhettoMateTime].time7 = u8:decode"Неизвестно"
 		color[7] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time8) > oneHour then
 		ini3[GhettoMateSeconds].time8 = 0
 		ini3[GhettoMateTime].time8 = u8:decode"Неизвестно"
 		color[8] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time9) > oneHour then
 		ini3[GhettoMateSeconds].time9 = 0
 		ini3[GhettoMateTime].time9 = u8:decode"Неизвестно"
 		color[9] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time10) > oneHour then
 		ini3[GhettoMateSeconds].time10 = 0
 		ini3[GhettoMateTime].time10 = u8:decode"Неизвестно"
 		color[10] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time11) > oneHour then
 		ini3[GhettoMateSeconds].time11 = 0
 		ini3[GhettoMateTime].time11 = u8:decode"Неизвестно"
 		color[11] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time12) > oneHour then
 		ini3[GhettoMateSeconds].time12 = 0
 		ini3[GhettoMateTime].time12 = u8:decode"Неизвестно"
 		color[12] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time13) > oneHour then
 		ini3[GhettoMateSeconds].time13 = 0
 		ini3[GhettoMateTime].time13 = u8:decode"Неизвестно"
 		color[13] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time14) > oneHour then
 		ini3[GhettoMateSeconds].time14 = 0
 		ini3[GhettoMateTime].time14 = u8:decode"Неизвестно"
 		color[14] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time15) > oneHour then
 		ini3[GhettoMateSeconds].time15 = 0
 		ini3[GhettoMateTime].time15 = u8:decode"Неизвестно"
 		color[15] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[GhettoMateSeconds].time16) > oneHour then
 		ini3[GhettoMateSeconds].time16 = 0
 		ini3[GhettoMateTime].time16 = u8:decode"Неизвестно"
 		color[16] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 end
 
@@ -2699,16 +2715,19 @@ function RefreshMO()
 		ini3[SecondsMO].time1 = 0
 		ini3[TimeMO].time1 = u8:decode"Неизвестно"
 		color[1] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[SecondsMO].time2) > oneHour then
 		ini3[SecondsMO].time2 = 0
 		ini3[TimeMO].time2 = u8:decode"Неизвестно"
 		color[2] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 	if math.abs(totalSeconds - ini3[SecondsMO].time3) > oneHour then
 		ini3[SecondsMO].time3 = 0
 		ini3[TimeMO].time3 = u8:decode"Неизвестно"
 		color[3] = "{808080}"
+		inicfg.save(ini3, directIni3)
 	end
 end
 
@@ -3183,6 +3202,7 @@ function sampev.onServerMessage(color, text)
 		end
 		stopSearch()
 		ugontimer = os.clock() + 900
+		imgui.Process = false
 	end
 
 	if string.find(text, u8:decode"Заказ можно брать раз в 15 минут. Осталось .+:.+") then
@@ -3193,6 +3213,7 @@ function sampev.onServerMessage(color, text)
 	if string.find(text, u8:decode"Пригони нам тачку марки .+, и мы тебе хорошо заплатим.") then
 		carname = string.match(text, u8:decode"Пригони нам тачку марки (.+), и мы тебе хорошо заплатим.")
 		sampSendChat("/fc " .. carname)
+		imgui.Process = true
 	end
 
 	if string.find(text, u8:decode"SMS: Это то что нам нужно, гони её на склад.") then
@@ -3468,6 +3489,7 @@ function sampev.onSendCommand(cmd)
 
 	if args[1] == '/fc' then
 		if args[2] then
+			imgui.Process = true
 			found = false
 			carname = args[2]
 			if args[3] then
@@ -3876,7 +3898,6 @@ function stopSearch()
 			if ini4[GhettoMateSettings].Sounds then
 				soundManager.playSound("message_tip")
 			end
-			spam = true
 		end
 		search = false
 	end
