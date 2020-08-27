@@ -1,7 +1,7 @@
 script_name("GhettoMate")
 script_author("Oleg_Cutov aka bier aka Vladanus")
 script_version('24/07/2020')
-script_version_number(14)
+script_version_number(15)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
