@@ -596,9 +596,9 @@ function main()
 	if ini4[hotkey] == nil then
 		ini4 = inicfg.load({
 			[hotkey] = {
-				bindDrugs="[18,49]",
-				bindAutoGetGuns="[18,50]",
-				bindSeller="[18,51]"
+				bindDrugs="[107]",
+				bindAutoGetGuns="[106]",
+				bindSeller="[109]"
 			}
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
@@ -3263,7 +3263,7 @@ function checkUpdates()
 					file:close()
 					os.remove(fpath)
 					if info['version_num'] > thisScript()['version_num'] then
-						sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF}Доступна новая версия скрипта! /gm > Информация > Обновить скрипт', main_color)
+						sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF}Доступна новая версия скрипта! /gm -> Информация -> Обновить скрипт', main_color)
 						script.update = true
 					return true
 					end
