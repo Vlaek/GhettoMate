@@ -3263,7 +3263,7 @@ function checkUpdates()
 					file:close()
 					os.remove(fpath)
 					if info['version_num'] > thisScript()['version_num'] then
-						sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF}Доступна новая версия скрипта! /gm -> Информация -> Обновить скрипт', main_color)
+						sampAddChatMessage(u8:decode' [GhettoMate] {FFFFFF}Доступна новая версия скрипта! /gm > Информация > Обновить скрипт', main_color)
 						script.update = true
 					return true
 					end
