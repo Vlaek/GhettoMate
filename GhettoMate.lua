@@ -1,13 +1,13 @@
 script_name("GhettoMate")
-script_author("Vlaek (Oleg_Cutov aka bier aka Vladanus)")
+script_author("Oleg_Cutov aka bier aka Vladanus")
 script_version('24/07/2020')
 script_version_number(14)
 script_url("https://vlaek.github.io/GhettoMate/")
 script.update = false
 
-local sampev, inicfg, imgui, encoding, keys = require 'lib.samp.events', require 'inicfg', require 'imgui', require 'encoding', require "vkeys"
+local sampev, inicfg, imgui, encoding, keys, rkeys = require 'lib.samp.events', require 'inicfg', require 'imgui', require 'encoding', require "vkeys", require 'rkeys'
 local as_action = require 'moonloader'.audiostream_state
-
+imgui.HotKey = require('imgui_addons').HotKey
 require "reload_all"
 require "lib.sampfuncs"
 require "lib.moonloader"
@@ -356,7 +356,7 @@ function main()
 	directIni2 = string.format("GhettoMate\\%s\\%s\\GhettoMateMoney.ini", server, my_name)
 	directIni3 = string.format("GhettoMate\\%s\\GhettoMateTime.ini", server)
 	directIni4 = string.format("GhettoMate\\%s\\%s\\GhettoMateSettings.ini", server, my_name)
-
+	
 	sampRegisterChatCommand("lhud", cmd_hud)
 	sampRegisterChatCommand("gm", cmd_menu)
 	sampRegisterChatCommand("mohud", cmd_MOhud)
@@ -378,7 +378,7 @@ function main()
 	soundManager.loadSound("message_alarm")
 	soundManager.loadSound("message_sos")
 
-	GhettoMateName = string.format('GhettoMateName')
+	GhettoMateName = string.format('LarekName')
 	if ini[GhettoMateName] == nil then
 		ini = inicfg.load({
 			[GhettoMateName] = {
@@ -403,7 +403,7 @@ function main()
 		inicfg.save(ini, directIni)
 	end
 
-	GhettoMateConfig = string.format('GhettoMateConfig')
+	GhettoMateConfig = string.format('Config')
 	if ini[GhettoMateConfig] == nil then
 		ini = inicfg.load({
 			[GhettoMateConfig] = {
@@ -443,7 +443,7 @@ function main()
 		inicfg.save(ini, directIni)
 	end
 
-	GhettoMateMoney = string.format('GhettoMateMoney')
+	GhettoMateMoney = string.format('Larek')
 	if ini2[GhettoMateMoney] == nil then
 		ini2 = inicfg.load({
 			[GhettoMateMoney] = {
@@ -458,7 +458,7 @@ function main()
 		inicfg.save(ini2, directIni2)
 	end
 
-	GhettoMateMO = string.format('GhettoMateMO')
+	GhettoMateMO = string.format('MO')
 	if ini2[GhettoMateMO] == nil then
 		ini2 = inicfg.load({
 			[GhettoMateMO] = {
@@ -469,7 +469,7 @@ function main()
 		inicfg.save(ini2, directIni2)
 	end
 
-	GhettoMateCapture = string.format('GhettoMateCapture')
+	GhettoMateCapture = string.format('Capture')
 	if ini2[GhettoMateCapture] == nil then
 		ini2 = inicfg.load({
 			[GhettoMateCapture] = {
@@ -496,7 +496,7 @@ function main()
 		inicfg.save(ini2, directIni2)
 	end
 
-	GhettoMateTime = string.format('GhettoMateTime')
+	GhettoMateTime = string.format('LarekTime')
 	if ini3[GhettoMateTime] == nil then
 		ini3 = inicfg.load({
 			[GhettoMateTime] = {
@@ -521,7 +521,7 @@ function main()
 		inicfg.save(ini3, directIni3)
 	end
 
-	GhettoMateSeconds = string.format('GhettoMateSeconds')
+	GhettoMateSeconds = string.format('LarekSeconds')
 	if ini3[GhettoMateSeconds] == nil then
 		ini3 = inicfg.load({
 			[GhettoMateSeconds] = {
@@ -570,7 +570,7 @@ function main()
 		inicfg.save(ini3, directIni3)
 	end
 
-	GhettoMateSettings = string.format('GhettoMateSettings')
+	GhettoMateSettings = string.format('Settings')
 	if ini4[GhettoMateSettings] == nil then
 		ini4 = inicfg.load({
 			[GhettoMateSettings] = {
@@ -591,6 +591,34 @@ function main()
 		}, directIni4)
 		inicfg.save(ini4, directIni4)
 	end
+	
+	hotkey = string.format('hotkey')
+	if ini4[hotkey] == nil then
+		ini4 = inicfg.load({
+			[hotkey] = {
+				bindDrugs="[18,49]",
+				bindAutoGetGuns="[18,50]",
+				bindSeller="[18,51]"
+			}
+		}, directIni4)
+		inicfg.save(ini4, directIni4)
+	end
+	
+	ActiveDrugs = {
+		v = decodeJson(ini4.hotkey.bindDrugs)
+	}
+
+	ActiveAutoGetGuns = {
+		v = decodeJson(ini4.hotkey.bindAutoGetGuns)
+	}
+	
+	ActiveSeller = {
+		v = decodeJson(ini4.hotkey.bindSeller)
+	}
+	
+	bindDrugs = rkeys.registerHotKey(ActiveDrugs.v, true, cmd_usedrugs)
+	bindAutoGetGuns = rkeys.registerHotKey(ActiveAutoGetGuns.v, true, cmd_autogetguns)
+	bindSeller = rkeys.registerHotKey(ActiveSeller.v, true, cmd_seller)
 
 	ini  = inicfg.load(GhettoMateConfig, directIni)
 	ini2 = inicfg.load(GhettoMateMoney, directIni2)
@@ -606,9 +634,6 @@ function main()
 	end
 
 	imgui.ApplyCustomStyle()
-	imgui.GetIO().Fonts:Clear()
-	imgui.GetIO().Fonts:AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 14/(1600/getScreenResolution()), nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic())
-	imgui.RebuildFonts()
 	imgui.Process = false
 	imgui.ShowCursor = false
 	while true do
@@ -616,7 +641,7 @@ function main()
 		
 		paused = isGamePaused()
 
-		GhettoMateConfig = string.format('GhettoMateConfig')
+		GhettoMateConfig = string.format('Config')
 		ini = inicfg.load(GhettoMateConfig, directIni)
 		hour = os.date("%H") + ini[GhettoMateConfig].time
 		hour2 = os.date("%H")
@@ -652,14 +677,6 @@ function main()
 		LarekChecker()
 		MOChecker()
 
-		if isKeyJustPressed(VK_MULTIPLY) then
-			cmd_autogetguns()
-		end
-
-		if isKeyJustPressed(VK_ADD) then
-			cmd_usedrugs()
-		end
-
 		if Find then
 			Suchen()
 		end
@@ -694,24 +711,26 @@ function main()
 									vehh[2] = posX
 									vehh[3] = posY
 									vehh[4] = posZ
-									vehh[6] = driverNickname
+									if driverNickname ~= my_name then
+										vehh[6] = driverNickname
+									end
 									vehh[7] = os.clock()
 									if carname then
-										if string.lower(carname) == string.lower(vehnames[modelid-399]) and driverNickname ~= my_name then
+										if string.lower(carname) == string.lower(vehnames[modelid-399]) then
 											removeMarks()
 											mark = addSpriteBlipForCoord(vehh[2],vehh[3],vehh[4],55)
 											ugcheckpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
 											search = true
-											if ini4[GhettoMateSettings].NotifyUgonyala then
-												if isDriver then
+											--if ini4[GhettoMateSettings].NotifyUgonyala then
+											--	if isDriver then
 													--sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
-												else
+											--	else
 													--sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Транспорт {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
-												end
-												if ini4[GhettoMateSettings].Sounds then
+											--	end
+											--	if ini4[GhettoMateSettings].Sounds then
 													--soundManager.playSound("message_tip")
-												end
-											end
+											--	end
+											--end
 											--[[if marks then
 												for i, mark in ipairs(marks) do
 													removeBlip(mark)
@@ -726,11 +745,11 @@ function main()
 									end
 								end
 							end
-							if not isRepeat and not search and driverNickname ~= my_name then
+							if not isRepeat and not search then
 								table.insert(vehlist, {vehnames[modelid-399], posX, posY, posZ, vehId, driverNickname, os.clock()})
 							end
-							if not isRepeatTwo and search and driverNickname ~= my_name then
-								table.insert(vehlist, {vehnames[modelid-399],posX,posY,posZ,vehId, driverNickname, os.clock()})
+							if not isRepeatTwo and search then
+								table.insert(vehlist, {vehnames[modelid-399], posX, posY, posZ, vehId, driverNickname, os.clock()})
 								if string.lower(carname) == string.lower(vehnames[modelid-399]) then
 									if ini4[GhettoMateSettings].NotifyUgonyala then
 										if isDriver then
@@ -759,16 +778,16 @@ function main()
 											removeMarks()
 											mark = addSpriteBlipForCoord(vehh[2],vehh[3],vehh[4],55)
 											ugcheckpoint = createCheckpoint(1, vehh[2],vehh[3],vehh[4],vehh[2],vehh[3],vehh[4], 1)
-											if ini4[GhettoMateSettings].NotifyUgonyala then
-												if isDriver then
+											--if ini4[GhettoMateSettings].NotifyUgonyala then
+											--	if isDriver then
 												--	sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен! За рулем: {FF0000}%s", vehnames[modelid-399], driverNickname), main_color)
-												else
+											--	else
 												--	sampAddChatMessage(string.format(u8:decode" [GhettoMate] {FFFFFF}Открытый {FF0000}\"%s\" {FFFFFF}обнаружен!", vehnames[modelid-399]), main_color)
-												end
-												if ini4[GhettoMateSettings].Sounds then
-													soundManager.playSound("message_tip")
-												end
-											end
+											--	end
+											--	if ini4[GhettoMateSettings].Sounds then
+													--soundManager.playSound("message_tip")
+											--	end
+											--end
 											--[[if marks then
 												for i, mark in ipairs(marks) do
 													removeBlip(mark)
@@ -836,118 +855,8 @@ function cmd_menu()
 	end
 end
 
-function imgui.ApplyCustomStyle()
-    imgui.SwitchContext()
-    local style = imgui.GetStyle()
-    local colors = style.Colors
-    local clr = imgui.Col
-    local ImVec4 = imgui.ImVec4
-
-    style.WindowRounding = 2.0
-    style.WindowTitleAlign = imgui.ImVec2(0.5, 0.84)
-    style.ChildWindowRounding = 2.0
-    style.FrameRounding = 2.0
-    style.ItemSpacing = imgui.ImVec2(5.0, 4.0)
-    style.ScrollbarSize = 13.0
-    style.ScrollbarRounding = 0
-    style.GrabMinSize = 8.0
-    style.GrabRounding = 1.0
-
-    colors[clr.FrameBg]                = ImVec4(0.48, 0.16, 0.16, 0.54)
-    colors[clr.FrameBgHovered]         = ImVec4(0.98, 0.26, 0.26, 0.40)
-    colors[clr.FrameBgActive]          = ImVec4(0.98, 0.26, 0.26, 0.67)
-    colors[clr.TitleBg]                = ImVec4(0.48, 0.16, 0.16, 1.00)
-    colors[clr.TitleBgActive]          = ImVec4(0.48, 0.16, 0.16, 1.00)
-    colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51)
-    colors[clr.CheckMark]              = ImVec4(0.98, 0.26, 0.26, 1.00)
-    colors[clr.SliderGrab]             = ImVec4(0.88, 0.26, 0.24, 1.00)
-    colors[clr.SliderGrabActive]       = ImVec4(0.98, 0.26, 0.26, 1.00)
-    colors[clr.Button]                 = ImVec4(0.98, 0.26, 0.26, 0.40)
-    colors[clr.ButtonHovered]          = ImVec4(0.98, 0.26, 0.26, 1.00)
-    colors[clr.ButtonActive]           = ImVec4(0.98, 0.06, 0.06, 1.00)
-    colors[clr.Header]                 = ImVec4(0.98, 0.26, 0.26, 0.31)
-    colors[clr.HeaderHovered]          = ImVec4(0.98, 0.26, 0.26, 0.80)
-    colors[clr.HeaderActive]           = ImVec4(0.98, 0.26, 0.26, 1.00)
-    colors[clr.Separator]              = colors[clr.Border]
-    colors[clr.SeparatorHovered]       = ImVec4(0.75, 0.10, 0.10, 0.78)
-    colors[clr.SeparatorActive]        = ImVec4(0.75, 0.10, 0.10, 1.00)
-    colors[clr.ResizeGrip]             = ImVec4(0.98, 0.26, 0.26, 0.25)
-    colors[clr.ResizeGripHovered]      = ImVec4(0.98, 0.26, 0.26, 0.67)
-    colors[clr.ResizeGripActive]       = ImVec4(0.98, 0.26, 0.26, 0.95)
-    colors[clr.TextSelectedBg]         = ImVec4(0.98, 0.26, 0.26, 0.35)
-    colors[clr.Text]                   = ImVec4(1.00, 1.00, 1.00, 1.00)
-    colors[clr.TextDisabled]           = ImVec4(0.50, 0.50, 0.50, 1.00)
-    colors[clr.WindowBg]               = ImVec4(0.06, 0.06, 0.06, 0.94)
-    colors[clr.ChildWindowBg]          = ImVec4(1.00, 1.00, 1.00, 0.00)
-    colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94)
-    colors[clr.ComboBg]                = colors[clr.PopupBg]
-    colors[clr.Border]                 = ImVec4(0.43, 0.43, 0.50, 0.50)
-    colors[clr.BorderShadow]           = ImVec4(0.00, 0.00, 0.00, 0.00)
-    colors[clr.MenuBarBg]              = ImVec4(0.14, 0.14, 0.14, 1.00)
-    colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.53)
-    colors[clr.ScrollbarGrab]          = ImVec4(0.31, 0.31, 0.31, 1.00)
-    colors[clr.ScrollbarGrabHovered]   = ImVec4(0.41, 0.41, 0.41, 1.00)
-    colors[clr.ScrollbarGrabActive]    = ImVec4(0.51, 0.51, 0.51, 1.00)
-    colors[clr.CloseButton]            = ImVec4(0.41, 0.41, 0.41, 0.50)
-    colors[clr.CloseButtonHovered]     = ImVec4(0.98, 0.39, 0.36, 1.00)
-    colors[clr.CloseButtonActive]      = ImVec4(0.98, 0.39, 0.36, 1.00)
-    colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00)
-    colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00)
-    colors[clr.PlotHistogram]          = ImVec4(0.90, 0.70, 0.00, 1.00)
-    colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.60, 0.00, 1.00)
-    colors[clr.ModalWindowDarkening]   = ImVec4(0.80, 0.80, 0.80, 0.35)
-end
-
-function imgui.TextColoredRGB(text)
-    local style = imgui.GetStyle()
-    local colors = style.Colors
-    local ImVec4 = imgui.ImVec4
-
-    local explode_argb = function(argb)
-        local a = bit.band(bit.rshift(argb, 24), 0xFF)
-        local r = bit.band(bit.rshift(argb, 16), 0xFF)
-        local g = bit.band(bit.rshift(argb, 8), 0xFF)
-        local b = bit.band(argb, 0xFF)
-        return a, r, g, b
-    end
-
-    local getcolor = function(color)
-        if color:sub(1, 6):upper() == 'SSSSSS' then
-            local r, g, b = colors[1].x, colors[1].y, colors[1].z
-            local a = tonumber(color:sub(7, 8), 16) or colors[1].w * 255
-            return ImVec4(r, g, b, a / 255)
-        end
-        local color = type(color) == 'string' and tonumber(color, 16) or color
-        if type(color) ~= 'number' then return end
-        local r, g, b, a = explode_argb(color)
-        return imgui.ImColor(r, g, b, a):GetVec4()
-    end
-
-    local render_text = function(text_)
-        for w in text_:gmatch('[^\r\n]+') do
-            local text, colors_, m = {}, {}, 1
-            w = w:gsub('{(......)}', '{%1FF}')
-            while w:find('{........}') do
-                local n, k = w:find('{........}')
-                local color = getcolor(w:sub(n + 1, k - 1))
-                if color then
-                    text[#text], text[#text + 1] = w:sub(m, n - 1), w:sub(k + 1, #w)
-                    colors_[#colors_ + 1] = color
-                    m = n
-                end
-                w = w:sub(1, n - 1) .. w:sub(k + 1, #w)
-            end
-            if text[0] then
-                for i = 0, #text do
-                    imgui.TextColored(colors_[i] or colors[1], u8(text[i]))
-                    imgui.SameLine(nil, 0)
-                end
-                imgui.NewLine()
-            else imgui.Text(u8(w)) end
-        end
-    end
-
-    render_text(text)
+function cmd_seller()
+	GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
 end
 
 function imgui.initBuffers()
@@ -975,14 +884,14 @@ function imgui.initBuffers()
 	imgui.IdAnimUgonyala = imgui.ImInt(ini4[GhettoMateSettings].IdAnimUgonyala)
 	imgui.TimerNotifyLarek = imgui.ImInt(ini4[GhettoMateSettings].TimerNotifyLarek)
 
-	imgui.price_Drugs = imgui.ImInt(ini.GhettoMateConfig.price_Drugs)
-	imgui.price_Deagle = imgui.ImInt(ini.GhettoMateConfig.price_Deagle)
-	imgui.price_M4 = imgui.ImInt(ini.GhettoMateConfig.price_M4)
-	imgui.price_Shotgun = imgui.ImInt(ini.GhettoMateConfig.price_Shotgun)
-	imgui.price_SDpistol = imgui.ImInt(ini.GhettoMateConfig.price_SDpistol)
-	imgui.price_AK47 = imgui.ImInt(ini.GhettoMateConfig.price_AK47)
-	imgui.price_SMG = imgui.ImInt(ini.GhettoMateConfig.price_SMG)
-	imgui.price_Rifle = imgui.ImInt(ini.GhettoMateConfig.price_Rifle)
+	imgui.price_Drugs = imgui.ImInt(ini[GhettoMateConfig].price_Drugs)
+	imgui.price_Deagle = imgui.ImInt(ini[GhettoMateConfig].price_Deagle)
+	imgui.price_M4 = imgui.ImInt(ini[GhettoMateConfig].price_M4)
+	imgui.price_Shotgun = imgui.ImInt(ini[GhettoMateConfig].price_Shotgun)
+	imgui.price_SDpistol = imgui.ImInt(ini[GhettoMateConfig].price_SDpistol)
+	imgui.price_AK47 = imgui.ImInt(ini[GhettoMateConfig].price_AK47)
+	imgui.price_SMG = imgui.ImInt(ini[GhettoMateConfig].price_SMG)
+	imgui.price_Rifle = imgui.ImInt(ini[GhettoMateConfig].price_Rifle)
 
 	combo_select1 = imgui.ImInt(ini.GunList.gun1)
 	combo_select2 = imgui.ImInt(ini.GunList.gun2)
@@ -1081,16 +990,30 @@ function imgui.OnDrawFrame()
 				inicfg.save(ini4, directIni4)
 			end
 			imgui.SameLine()
-			imgui.PushItemWidth(toScreenX(165/5))
-			if imgui.InputInt("##inp3", imgui.Health, 1, 1) then
+			imgui.PushItemWidth(toScreenX(15))
+			if imgui.InputInt("##inp3", imgui.Health, 0, 1) then
 				if imgui.Health.v ~= nil and imgui.Health.v ~= "" then
 					ini4[GhettoMateSettings].Health = imgui.Health.v
 					inicfg.save(ini4, directIni4)
 				end
 			end
 			imgui.PopItemWidth()
-			if imgui.Checkbox("Уведомления от AutoGetGuns", imgui.ImBool(ini4[GhettoMateSettings].NotifyAutoGetGuns)) then
+			imgui.SameLine()
+			if imgui.HotKey("##1", ActiveDrugs, tLastKeys, toScreenX(30)) then
+				rkeys.changeHotKey(bindDrugs, ActiveDrugs.v)
+
+				ini4.hotkey.bindDrugs = encodeJson(ActiveDrugs.v)
+				inicfg.save(ini4, directIni4)
+			end
+			if imgui.Checkbox("Уведомления от AutoGetGuns ", imgui.ImBool(ini4[GhettoMateSettings].NotifyAutoGetGuns)) then
 				ini4[GhettoMateSettings].NotifyAutoGetGuns = not ini4[GhettoMateSettings].NotifyAutoGetGuns
+				inicfg.save(ini4, directIni4)
+			end
+			imgui.SameLine()
+			if imgui.HotKey("##2", ActiveAutoGetGuns, tLastKeys, toScreenX(30)) then
+				rkeys.changeHotKey(bindAutoGetGuns, ActiveAutoGetGuns.v)
+
+				ini4.hotkey.bindAutoGetGuns = encodeJson(ActiveAutoGetGuns.v)
 				inicfg.save(ini4, directIni4)
 			end
 			if imgui.Checkbox("Уведомления от магазинов одежды. Таймер уведомлений: ", imgui.ImBool(ini4[GhettoMateSettings].NotifyMO)) then
@@ -1468,7 +1391,6 @@ function imgui.OnDrawFrame()
 			end
 
 		elseif imgui.settingsTab == 4 then
-			--imgui.Dummy(vec(165/6, 18))
 			imgui.Dummy(vec(165/6, 0))
 			imgui.SameLine(toScreenX(34))
 			imgui.Text("Патроны")
@@ -1481,7 +1403,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(124))
 			imgui.Dummy(vec(165/3, 0))
 			imgui.SameLine(toScreenX(153))
-			imgui.Text("Материалов: " .. ini.GhettoMateConfig.my_mats)
+			imgui.Text("Материалов: " .. ini[GhettoMateConfig].my_mats)
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1493,7 +1415,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp", imgui.price_Deagle, 0, 500) then
-				ini.GhettoMateConfig.price_Deagle = imgui.price_Deagle.v
+				ini[GhettoMateConfig].price_Deagle = imgui.price_Deagle.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1505,7 +1427,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp13', vec(28,0)) then
 				if text_buffer_pt1.v ~= nil and text_buffer_pt1.v ~= "" and isNumber(text_buffer_pt1.v) and tonumber(text_buffer_pt1.v) > 0 and isNumber(text_buffer_pt1.v) then
 					if text_buffer_id1.v ~= nil and text_buffer_id1.v ~= "" and isNumber(text_buffer_id1.v) and tonumber(text_buffer_id1.v) >= 0 and tonumber(text_buffer_id1.v) < 1000 then
-						sampSendChat("/sellgun deagle " .. tonumber(text_buffer_pt1.v) .. " " .. ini.GhettoMateConfig.price_Deagle * tonumber(text_buffer_pt1.v) .. " " .. tonumber(text_buffer_id1.v))
+						sampSendChat("/sellgun deagle " .. tonumber(text_buffer_pt1.v) .. " " .. ini[GhettoMateConfig].price_Deagle * tonumber(text_buffer_pt1.v) .. " " .. tonumber(text_buffer_id1.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1522,7 +1444,7 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			imgui.Text("" .. math.floor(tonumber(ini[GhettoMateConfig].my_mats)/3))
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1534,7 +1456,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp24", imgui.price_M4, 0, 500) then
-				ini.GhettoMateConfig.price_M4 = imgui.price_M4.v
+				ini[GhettoMateConfig].price_M4 = imgui.price_M4.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1546,7 +1468,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp23', vec(28,0)) then
 				if text_buffer_pt2.v ~= nil and text_buffer_pt2.v ~= ""  and isNumber(text_buffer_pt2.v) and tonumber(text_buffer_pt2.v) > 0 and isNumber(text_buffer_pt2.v) then
 					if text_buffer_id2.v ~= nil and text_buffer_id2.v ~= "" and isNumber(text_buffer_id2.v) and tonumber(text_buffer_id2.v) >= 0 and tonumber(text_buffer_id2.v) < 1000 then
-						sampSendChat("/sellgun m4 " .. tonumber(text_buffer_pt2.v) .. " " .. ini.GhettoMateConfig.price_M4 * tonumber(text_buffer_pt2.v) .. " " .. tonumber(text_buffer_id2.v))
+						sampSendChat("/sellgun m4 " .. tonumber(text_buffer_pt2.v) .. " " .. ini[GhettoMateConfig].price_M4 * tonumber(text_buffer_pt2.v) .. " " .. tonumber(text_buffer_id2.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1563,7 +1485,7 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			imgui.Text("" .. math.floor(tonumber(ini[GhettoMateConfig].my_mats)/3))
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1575,7 +1497,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp34", imgui.price_Shotgun, 0, 500) then
-				ini.GhettoMateConfig.price_Shotgun = imgui.price_Shotgun.v
+				ini[GhettoMateConfig].price_Shotgun = imgui.price_Shotgun.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1587,7 +1509,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp33', vec(28,0)) then
 				if text_buffer_pt3.v ~= nil and text_buffer_pt3.v ~= "" and isNumber(text_buffer_pt3.v) and tonumber(text_buffer_pt3.v) > 0 and isNumber(text_buffer_pt3.v) then
 					if text_buffer_id3.v ~= nil and text_buffer_id3.v ~= "" and isNumber(text_buffer_id3.v) and tonumber(text_buffer_id3.v) >= 0 and tonumber(text_buffer_id3.v) < 1000 then
-						sampSendChat("/sellgun Shotgun " .. tonumber(text_buffer_pt3.v) .. " " .. ini.GhettoMateConfig.price_Shotgun * tonumber(text_buffer_pt3.v) .. " " .. tonumber(text_buffer_id3.v))
+						sampSendChat("/sellgun Shotgun " .. tonumber(text_buffer_pt3.v) .. " " .. ini[GhettoMateConfig].price_Shotgun * tonumber(text_buffer_pt3.v) .. " " .. tonumber(text_buffer_id3.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1604,7 +1526,7 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			imgui.Text("" .. math.floor(tonumber(ini[GhettoMateConfig].my_mats)/3))
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1616,7 +1538,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp44", imgui.price_Rifle, 0, 500) then
-				ini.GhettoMateConfig.price_Rifle = imgui.price_Rifle.v
+				ini[GhettoMateConfig].price_Rifle = imgui.price_Rifle.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1628,7 +1550,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp43', vec(28,0)) then
 				if text_buffer_pt4.v ~= nil and text_buffer_pt4.v ~= "" and isNumber(text_buffer_pt4.v) and tonumber(text_buffer_pt4.v) > 0 and isNumber(text_buffer_pt4.v) then
 					if text_buffer_id4.v ~= nil and text_buffer_id4.v ~= "" and isNumber(text_buffer_id4.v) and tonumber(text_buffer_id4.v) >= 0 and tonumber(text_buffer_id4.v) < 1000 then
-						sampSendChat("/sellgun Rifle " .. tonumber(text_buffer_pt4.v) .. " " .. ini.GhettoMateConfig.price_Rifle * tonumber(text_buffer_pt4.v) .. " " .. tonumber(text_buffer_id4.v))
+						sampSendChat("/sellgun Rifle " .. tonumber(text_buffer_pt4.v) .. " " .. ini[GhettoMateConfig].price_Rifle * tonumber(text_buffer_pt4.v) .. " " .. tonumber(text_buffer_id4.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1645,7 +1567,7 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/5))
+			imgui.Text("" .. math.floor(tonumber(ini[GhettoMateConfig].my_mats)/5))
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1657,7 +1579,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp54", imgui.price_AK47, 0, 500) then
-				ini.GhettoMateConfig.price_AK47 = imgui.price_AK47.v
+				ini[GhettoMateConfig].price_AK47 = imgui.price_AK47.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1669,7 +1591,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp53', vec(28,0)) then
 				if text_buffer_pt5.v ~= nil and text_buffer_pt5.v ~= "" and isNumber(text_buffer_pt5.v) and tonumber(text_buffer_pt5.v) > 0 and isNumber(text_buffer_pt5.v) then
 					if text_buffer_id5.v ~= nil and text_buffer_id5.v ~= "" and isNumber(text_buffer_id5.v) and tonumber(text_buffer_id5.v) >= 0 and tonumber(text_buffer_id5.v) < 1000 then
-						sampSendChat("/sellgun AK47 " .. tonumber(text_buffer_pt5.v) .. " " .. ini.GhettoMateConfig.price_AK47 * tonumber(text_buffer_pt5.v) .. " " .. tonumber(text_buffer_id5.v))
+						sampSendChat("/sellgun AK47 " .. tonumber(text_buffer_pt5.v) .. " " .. ini[GhettoMateConfig].price_AK47 * tonumber(text_buffer_pt5.v) .. " " .. tonumber(text_buffer_id5.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1686,7 +1608,7 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/3))
+			imgui.Text("" .. math.floor(tonumber(ini[GhettoMateConfig].my_mats)/3))
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1698,7 +1620,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp64", imgui.price_SDpistol, 0, 500) then
-				ini.GhettoMateConfig.price_SDpistol = imgui.price_SDpistol.v
+				ini[GhettoMateConfig].price_SDpistol = imgui.price_SDpistol.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1710,7 +1632,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp63', vec(28,0)) then
 				if text_buffer_pt6.v ~= nil and text_buffer_pt6.v ~= "" and isNumber(text_buffer_pt6.v) and tonumber(text_buffer_pt6.v) > 0 and isNumber(text_buffer_pt6.v) then
 					if text_buffer_id6.v ~= nil and text_buffer_id6.v ~= "" and isNumber(text_buffer_id6.v) and tonumber(text_buffer_id6.v) >= 0 and tonumber(text_buffer_id6.v) < 1000 then
-						sampSendChat("/sellgun SDpistol " .. tonumber(text_buffer_pt6.v) .. " " .. ini.GhettoMateConfig.price_SDpistol * tonumber(text_buffer_pt6.v) .. " " .. tonumber(text_buffer_id6.v))
+						sampSendChat("/sellgun SDpistol " .. tonumber(text_buffer_pt6.v) .. " " .. ini[GhettoMateConfig].price_SDpistol * tonumber(text_buffer_pt6.v) .. " " .. tonumber(text_buffer_id6.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1727,7 +1649,7 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. tonumber(ini.GhettoMateConfig.my_mats)/1)
+			imgui.Text("" .. tonumber(ini[GhettoMateConfig].my_mats)/1)
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1739,7 +1661,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp74", imgui.price_SMG, 0, 500) then
-				ini.GhettoMateConfig.price_SMG = imgui.price_SMG.v
+				ini[GhettoMateConfig].price_SMG = imgui.price_SMG.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1751,7 +1673,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp73', vec(28,0)) then
 				if text_buffer_pt7.v ~= nil and text_buffer_pt7.v ~= "" and isNumber(text_buffer_pt7.v) and tonumber(text_buffer_pt7.v) > 0 and isNumber(text_buffer_pt7.v) then
 					if text_buffer_id7.v ~= nil and text_buffer_id7.v ~= "" and isNumber(text_buffer_id7.v) and tonumber(text_buffer_id7.v) >= 0 and tonumber(text_buffer_id7.v) < 1000 then
-						sampSendChat("/sellgun SMG " .. tonumber(text_buffer_pt7.v) .. " " .. ini.GhettoMateConfig.price_SMG * tonumber(text_buffer_pt7.v) .. " " .. tonumber(text_buffer_id7.v))
+						sampSendChat("/sellgun SMG " .. tonumber(text_buffer_pt7.v) .. " " .. ini[GhettoMateConfig].price_SMG * tonumber(text_buffer_pt7.v) .. " " .. tonumber(text_buffer_id7.v))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1768,7 +1690,7 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. math.floor(tonumber(ini.GhettoMateConfig.my_mats)/2))
+			imgui.Text("" .. math.floor(tonumber(ini[GhettoMateConfig].my_mats)/2))
 
 			imgui.Dummy(vec(3, 0))
 			imgui.SameLine()
@@ -1780,7 +1702,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine(toScreenX(64))
 			imgui.PushItemWidth(toScreenX(165/6))
 			if imgui.SliderInt("##inp84", imgui.price_Drugs, 0, 150) then
-				ini.GhettoMateConfig.price_Drugs = imgui.price_Drugs.v
+				ini[GhettoMateConfig].price_Drugs = imgui.price_Drugs.v
 				inicfg.save(ini, directIni)
 			end
 			imgui.PopItemWidth()
@@ -1792,7 +1714,7 @@ function imgui.OnDrawFrame()
 			if imgui.Button("Продать" .. '##inp83', vec(28,0)) then
 				if text_buffer_pt8.v ~= nil and text_buffer_pt8.v ~= "" and isNumber(text_buffer_pt8.v) and tonumber(text_buffer_pt8.v) > 0 and isNumber(text_buffer_pt8.v) then
 					if text_buffer_id8.v ~= nil and text_buffer_id8.v ~= "" and isNumber(text_buffer_id8.v) and tonumber(text_buffer_id8.v) >= 0 and tonumber(text_buffer_id8.v) < 1000 then
-						sampSendChat("/selldrugs " .. tonumber(text_buffer_id8.v) .. " " .. tonumber(text_buffer_pt8.v) .. " " .. (ini.GhettoMateConfig.price_Drugs * tonumber(text_buffer_pt8.v)))
+						sampSendChat("/selldrugs " .. tonumber(text_buffer_id8.v) .. " " .. tonumber(text_buffer_pt8.v) .. " " .. (ini[GhettoMateConfig].price_Drugs * tonumber(text_buffer_pt8.v)))
 					else
 						sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
 					end
@@ -1809,15 +1731,21 @@ function imgui.OnDrawFrame()
 				end
 			end
 			imgui.SameLine(toScreenX(184))
-			imgui.Text("" .. tonumber(ini.GhettoMateConfig.my_drugs)/1)
+			imgui.Text("" .. tonumber(ini[GhettoMateConfig].my_drugs)/1)
 			imgui.Separator()
 
-
 			imgui.SetCursorPos(vec(10, 128))
+			if imgui.HotKey("##3", ActiveSeller, tLastKeys, toScreenX(25)) then
+				rkeys.changeHotKey(bindSeller, ActiveSeller.v)
+
+				ini4.hotkey.bindSeller = encodeJson(ActiveSeller.v)
+				inicfg.save(ini4, directIni4)
+			end
+			imgui.SameLine()
 			if imgui.Button("Сделать", vec(28,0)) then
 				GunWait:run(ini.GunList.gun1, ini.GunList.gun2, ini.GunList.gun3, ini.GunList.pt1, ini.GunList.pt2, ini.GunList.pt3)
 			end
-			imgui.SetCursorPos(vec(40, 115))
+			imgui.SetCursorPos(vec(67, 115))
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.Combo("##Combo1", combo_select1, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
 				ini.GunList.gun1 = combo_select1.v
@@ -1867,7 +1795,7 @@ function imgui.OnDrawFrame()
 				imgui.Text("" .. mats1)
 			end
 
-			imgui.SetCursorPos(vec(40, 128))
+			imgui.SetCursorPos(vec(67, 128))
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.Combo("##Combo2", combo_select2, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
 				ini.GunList.gun2 = combo_select2.v
@@ -1917,7 +1845,7 @@ function imgui.OnDrawFrame()
 				imgui.Text("" .. mats1)
 			end
 
-			imgui.SetCursorPos(vec(40, 141))
+			imgui.SetCursorPos(vec(67, 141))
 			imgui.PushItemWidth(toScreenX(43))
 			if imgui.Combo("##Combo3", combo_select3, "Deagle\0M4\0Shotgun\0Rifle\0SDpistol\0AK47\0SMG\0-\0\0") then
 				ini.GunList.gun3 = combo_select3.v
@@ -1967,7 +1895,7 @@ function imgui.OnDrawFrame()
 				imgui.Text("" .. mats3)
 			end
 
-			imgui.SetCursorPos(vec(133, 129.5))
+			imgui.SetCursorPos(vec(160, 129.5))
 			imgui.Text("" .. mats1 + mats2 + mats3)
 
 		elseif imgui.settingsTab == 5 then
@@ -3238,38 +3166,38 @@ function sampev.onServerMessage(color, text)
 			DrugsWait:run()
 		end
 	end
-	if string.find(text, u8:decode"Недостаточно наркотиков") and ini.GhettoMateConfig.my_drugs > 0 then
+	if string.find(text, u8:decode"Недостаточно наркотиков") and ini[GhettoMateConfig].my_drugs > 0 then
 		--DrugsCount = DrugsCount - 1
 		--UseDrugsWait:run(DrugsCount)
-		UseDrugsTimer:run(ini.GhettoMateConfig.my_drugs)
-	elseif string.find(text, u8:decode"Недостаточно наркотиков") and ini.GhettoMateConfig.my_drugs == 0 then
-		ini.GhettoMateConfig.my_drugs = 0 
+		UseDrugsTimer:run(ini[GhettoMateConfig].my_drugs)
+	elseif string.find(text, u8:decode"Недостаточно наркотиков") and ini[GhettoMateConfig].my_drugs == 0 then
+		ini[GhettoMateConfig].my_drugs = 0 
 		inicfg.save(ini, directIni)
 	end
 
 	if string.find(text,  u8:decode" Остаток: .+ грамм") then
-		ini.GhettoMateConfig.my_drugs = string.match(text, u8:decode" Остаток: (.+) грамм")
+		ini[GhettoMateConfig].my_drugs = string.match(text, u8:decode" Остаток: (.+) грамм")
 		UseDrugsTimer = os.clock() + 60
 		inicfg.save(ini, directIni)
 	end
 	if string.find(text, u8:decode"Остаток: .+ материалов") then
-		ini.GhettoMateConfig.my_mats = string.match(text, u8:decode"Остаток: (.+) материалов")
+		ini[GhettoMateConfig].my_mats = string.match(text, u8:decode"Остаток: (.+) материалов")
 		inicfg.save(ini, directIni)
 	end
 	if string.find(text, u8:decode"У вас 500/500 материалов с собой") then
-		ini.GhettoMateConfig.my_mats = 500
+		ini[GhettoMateConfig].my_mats = 500
 		inicfg.save(ini, directIni)
 	end
 	if string.find(text, u8:decode"У вас 600/600 материалов с собой") then
-		ini.GhettoMateConfig.my_mats = 600
+		ini[GhettoMateConfig].my_mats = 600
 		inicfg.save(ini, directIni)
 	end
 	if string.find(text, u8:decode"У вас 800/800 материалов с собой") then
-		ini.GhettoMateConfig.my_mats = 800
+		ini[GhettoMateConfig].my_mats = 800
 		inicfg.save(ini, directIni)
 	end
 	if string.find(text, u8:decode"Вы купили .+ грамм за .+ вирт") then
-		ini.GhettoMateConfig.my_drugs = string.match(text, u8:decode"У вас есть (.+) грамм")
+		ini[GhettoMateConfig].my_drugs = string.match(text, u8:decode"У вас есть (.+) грамм")
 		inicfg.save(ini, directIni)
 	end
 	
@@ -3788,13 +3716,13 @@ function sampev.onSendCommand(cmd)
 		if args[2] == 'deagle' or args[2] == 'sdpistol' or args[2] == 'rifle' or args[2] == 'shotgun' or args[2] == 'smg' or args[2] == 'ak47' or args[2] == 'm4' then -- gun
 			if args[3] ~= nil and args[3] ~= "" and tonumber(args[3]) > 0 and isNumber(args[3]) then -- pt
 				if args[4] ~= nil and args[4] ~= "" and tonumber(args[4]) >= 0 and tonumber(args[4]) < 1000 then --id player
-					if args[2] == 'deagle' then price_gun = ini.GhettoMateConfig.price_Deagle end
-					if args[2] == 'm4' then price_gun = ini.GhettoMateConfig.price_M4 end
-					if args[2] == 'sdpistol' then price_gun = ini.GhettoMateConfig.price_SDpistol end
-					if args[2] == 'rifle' then price_gun = ini.GhettoMateConfig.price_Rifle end
-					if args[2] == 'shotgun' then price_gun = ini.GhettoMateConfig.price_Shotgun end
-					if args[2] == 'ak47' then price_gun = ini.GhettoMateConfig.price_AK47 end
-					if args[2] == 'smg' then price_gun = ini.GhettoMateConfig.price_SMG end
+					if args[2] == 'deagle' then price_gun = ini[GhettoMateConfig].price_Deagle end
+					if args[2] == 'm4' then price_gun = ini[GhettoMateConfig].price_M4 end
+					if args[2] == 'sdpistol' then price_gun = ini[GhettoMateConfig].price_SDpistol end
+					if args[2] == 'rifle' then price_gun = ini[GhettoMateConfig].price_Rifle end
+					if args[2] == 'shotgun' then price_gun = ini[GhettoMateConfig].price_Shotgun end
+					if args[2] == 'ak47' then price_gun = ini[GhettoMateConfig].price_AK47 end
+					if args[2] == 'smg' then price_gun = ini[GhettoMateConfig].price_SMG end
 					sampSendChat("/sellgun " .. args[2] .. " " .. args[3] .. " " .. tonumber(args[3]) * tonumber(price_gun) .. " " .. args[4])
 				else
 					sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}id должен быть от 0 до 999", main_color)
@@ -3811,7 +3739,7 @@ function sampev.onSendCommand(cmd)
 	if args[1] == '/sd' then
 		if args[2] ~= nil and args[2] ~= "" and isNumber(args[2]) and tonumber(args[2]) > tonumber(0) then -- id
 			if args[3] ~= nil and args[3] ~= "" and isNumber(args[3])  and tonumber(args[3]) >= 0 and tonumber(args[3]) < 1000 then -- count
-				sampSendChat("/selldrugs " .. args[2] .. " " .. args[3] .. " " .. tonumber(args[3]) * tonumber(ini.GhettoMateConfig.price_Drugs))
+				sampSendChat("/selldrugs " .. args[2] .. " " .. args[3] .. " " .. tonumber(args[3]) * tonumber(ini[GhettoMateConfig].price_Drugs))
 			else
 				sampAddChatMessage(u8:decode" [GhettoMate] {FFFFFF}Наркотиков должно быть больше нуля", main_color)
 			end
@@ -4090,52 +4018,6 @@ function getweaponname(weapon) -- getweaponname by FYP
   return names[weapon]
 end
 
-function AfterDeathReload()
-	if isPlayerDead(playerHandle) then
-		Magaz1  = false
-		Magaz2  = false
-		Magaz3  = false
-		Magaz4  = false
-		Magaz5  = false
-		Magaz6  = false
-		Magaz7  = false
-		Magaz8  = false
-		Magaz9  = false
-		Magaz10 = false
-		Magaz11 = false
-		Magaz12 = false
-		Magaz13 = false
-		Magaz14 = false
-		Magaz15 = false
-		Magaz16 = false
-		MOLS    = false
-		MOSF    = false
-		MOLV    = false
-		Use     = true
-		DrugsWait:terminate()
-	end
-end
-
-function toScreenY(gY)
-    local x, y = convertGameScreenCoordsToWindowScreenCoords(0, gY)
-    return y
-end
-
-function toScreenX(gX)
-    local x, y = convertGameScreenCoordsToWindowScreenCoords(gX, 0)
-    return x
-end
-
-function toScreen(gX, gY)
-    local s = {}
-    s.x, s.y = convertGameScreenCoordsToWindowScreenCoords(gX, gY)
-    return s
-end
-
-function vec(gX, gY)
-    return imgui.ImVec2(convertGameScreenCoordsToWindowScreenCoords(gX, gY))
-end
-
 function LarekChecker()
 	if ini3[GhettoMateTime].time1 == u8:decode"Неизвестно" then
 		color[1] = "{808080}"
@@ -4311,4 +4193,164 @@ function MOChecker()
 			colorMO[3] = "{06940f}"
 		end
 	end
+end
+
+function AfterDeathReload()
+	if isPlayerDead(playerHandle) then
+		Magaz1  = false
+		Magaz2  = false
+		Magaz3  = false
+		Magaz4  = false
+		Magaz5  = false
+		Magaz6  = false
+		Magaz7  = false
+		Magaz8  = false
+		Magaz9  = false
+		Magaz10 = false
+		Magaz11 = false
+		Magaz12 = false
+		Magaz13 = false
+		Magaz14 = false
+		Magaz15 = false
+		Magaz16 = false
+		MOLS    = false
+		MOSF    = false
+		MOLV    = false
+		Use     = true
+		DrugsWait:terminate()
+	end
+end
+
+function imgui.ApplyCustomStyle()
+    imgui.SwitchContext()
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local clr = imgui.Col
+    local ImVec4 = imgui.ImVec4
+
+    style.WindowRounding = 2.0
+    style.WindowTitleAlign = imgui.ImVec2(0.5, 0.84)
+    style.ChildWindowRounding = 2.0
+    style.FrameRounding = 2.0
+    style.ItemSpacing = imgui.ImVec2(5.0, 4.0)
+    style.ScrollbarSize = 13.0
+    style.ScrollbarRounding = 0
+    style.GrabMinSize = 8.0
+    style.GrabRounding = 1.0
+
+    colors[clr.FrameBg]                = ImVec4(0.48, 0.16, 0.16, 0.54)
+    colors[clr.FrameBgHovered]         = ImVec4(0.98, 0.26, 0.26, 0.40)
+    colors[clr.FrameBgActive]          = ImVec4(0.98, 0.26, 0.26, 0.67)
+    colors[clr.TitleBg]                = ImVec4(0.48, 0.16, 0.16, 1.00)
+    colors[clr.TitleBgActive]          = ImVec4(0.48, 0.16, 0.16, 1.00)
+    colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51)
+    colors[clr.CheckMark]              = ImVec4(0.98, 0.26, 0.26, 1.00)
+    colors[clr.SliderGrab]             = ImVec4(0.88, 0.26, 0.24, 1.00)
+    colors[clr.SliderGrabActive]       = ImVec4(0.98, 0.26, 0.26, 1.00)
+    colors[clr.Button]                 = ImVec4(0.98, 0.26, 0.26, 0.40)
+    colors[clr.ButtonHovered]          = ImVec4(0.98, 0.26, 0.26, 1.00)
+    colors[clr.ButtonActive]           = ImVec4(0.98, 0.06, 0.06, 1.00)
+    colors[clr.Header]                 = ImVec4(0.98, 0.26, 0.26, 0.31)
+    colors[clr.HeaderHovered]          = ImVec4(0.98, 0.26, 0.26, 0.80)
+    colors[clr.HeaderActive]           = ImVec4(0.98, 0.26, 0.26, 1.00)
+    colors[clr.Separator]              = colors[clr.Border]
+    colors[clr.SeparatorHovered]       = ImVec4(0.75, 0.10, 0.10, 0.78)
+    colors[clr.SeparatorActive]        = ImVec4(0.75, 0.10, 0.10, 1.00)
+    colors[clr.ResizeGrip]             = ImVec4(0.98, 0.26, 0.26, 0.25)
+    colors[clr.ResizeGripHovered]      = ImVec4(0.98, 0.26, 0.26, 0.67)
+    colors[clr.ResizeGripActive]       = ImVec4(0.98, 0.26, 0.26, 0.95)
+    colors[clr.TextSelectedBg]         = ImVec4(0.98, 0.26, 0.26, 0.35)
+    colors[clr.Text]                   = ImVec4(1.00, 1.00, 1.00, 1.00)
+    colors[clr.TextDisabled]           = ImVec4(0.50, 0.50, 0.50, 1.00)
+    colors[clr.WindowBg]               = ImVec4(0.06, 0.06, 0.06, 0.94)
+    colors[clr.ChildWindowBg]          = ImVec4(1.00, 1.00, 1.00, 0.00)
+    colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94)
+    colors[clr.ComboBg]                = colors[clr.PopupBg]
+    colors[clr.Border]                 = ImVec4(0.43, 0.43, 0.50, 0.50)
+    colors[clr.BorderShadow]           = ImVec4(0.00, 0.00, 0.00, 0.00)
+    colors[clr.MenuBarBg]              = ImVec4(0.14, 0.14, 0.14, 1.00)
+    colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.53)
+    colors[clr.ScrollbarGrab]          = ImVec4(0.31, 0.31, 0.31, 1.00)
+    colors[clr.ScrollbarGrabHovered]   = ImVec4(0.41, 0.41, 0.41, 1.00)
+    colors[clr.ScrollbarGrabActive]    = ImVec4(0.51, 0.51, 0.51, 1.00)
+    colors[clr.CloseButton]            = ImVec4(0.41, 0.41, 0.41, 0.50)
+    colors[clr.CloseButtonHovered]     = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.CloseButtonActive]      = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00)
+    colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00)
+    colors[clr.PlotHistogram]          = ImVec4(0.90, 0.70, 0.00, 1.00)
+    colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.60, 0.00, 1.00)
+    colors[clr.ModalWindowDarkening]   = ImVec4(0.80, 0.80, 0.80, 0.35)
+end
+
+function imgui.TextColoredRGB(text)
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local ImVec4 = imgui.ImVec4
+
+    local explode_argb = function(argb)
+        local a = bit.band(bit.rshift(argb, 24), 0xFF)
+        local r = bit.band(bit.rshift(argb, 16), 0xFF)
+        local g = bit.band(bit.rshift(argb, 8), 0xFF)
+        local b = bit.band(argb, 0xFF)
+        return a, r, g, b
+    end
+
+    local getcolor = function(color)
+        if color:sub(1, 6):upper() == 'SSSSSS' then
+            local r, g, b = colors[1].x, colors[1].y, colors[1].z
+            local a = tonumber(color:sub(7, 8), 16) or colors[1].w * 255
+            return ImVec4(r, g, b, a / 255)
+        end
+        local color = type(color) == 'string' and tonumber(color, 16) or color
+        if type(color) ~= 'number' then return end
+        local r, g, b, a = explode_argb(color)
+        return imgui.ImColor(r, g, b, a):GetVec4()
+    end
+
+    local render_text = function(text_)
+        for w in text_:gmatch('[^\r\n]+') do
+            local text, colors_, m = {}, {}, 1
+            w = w:gsub('{(......)}', '{%1FF}')
+            while w:find('{........}') do
+                local n, k = w:find('{........}')
+                local color = getcolor(w:sub(n + 1, k - 1))
+                if color then
+                    text[#text], text[#text + 1] = w:sub(m, n - 1), w:sub(k + 1, #w)
+                    colors_[#colors_ + 1] = color
+                    m = n
+                end
+                w = w:sub(1, n - 1) .. w:sub(k + 1, #w)
+            end
+            if text[0] then
+                for i = 0, #text do
+                    imgui.TextColored(colors_[i] or colors[1], u8(text[i]))
+                    imgui.SameLine(nil, 0)
+                end
+                imgui.NewLine()
+            else imgui.Text(u8(w)) end
+        end
+    end
+
+    render_text(text)
+end
+
+function toScreenY(gY)
+    local x, y = convertGameScreenCoordsToWindowScreenCoords(0, gY)
+    return y
+end
+
+function toScreenX(gX)
+    local x, y = convertGameScreenCoordsToWindowScreenCoords(gX, 0)
+    return x
+end
+
+function toScreen(gX, gY)
+    local s = {}
+    s.x, s.y = convertGameScreenCoordsToWindowScreenCoords(gX, gY)
+    return s
+end
+
+function vec(gX, gY)
+    return imgui.ImVec2(convertGameScreenCoordsToWindowScreenCoords(gX, gY))
 end
